@@ -1,4 +1,4 @@
-# CPG -- Compacting, Picking and Growing for Unforgetting Continual Learning
+# Compacting, Picking and Growing (CPG)
 
 This is an experimental Pytorch implementation of CPG - a lifelong learning algorithm for object classification. For details about CPG please refer to the paper ***CPG*** by ......
 
