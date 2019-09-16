@@ -65,7 +65,7 @@ $ bash experiment1/inference_CPG_cifar100_result.sh
 ---
 
 ## Experiment2 (Compact 6 tasks into VGG16/ResNet50 network)  
-- Datasets: We provide [the 5 tasks datasets](https://drive.google.com/file/d/1a-FiCtYO_7nRcI9eIHrlZysq_0N3Sh2P/view?usp=sharing), including cubs_cropped   stanford_cars_cropped, flowers, wikiart,and sketches.(**without ImageNet**).
+- Datasets: We provide [the 5 tasks datasets](https://drive.google.com/file/d/1a-FiCtYO_7nRcI9eIHrlZysq_0N3Sh2P/view?usp=sharing), including,   cubs_cropped, stanford_cars_cropped, flowers, wikiart,and sketches. (**without ImageNet**).
 
 `Step 1. Download multiple datasets`
 
