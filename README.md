@@ -63,11 +63,12 @@ $ bash experiment1/inference_CPG_cifar100_result.sh
 ```
 
 ---
-#### Checkpoints
+#### CPG-VGG16 Checkpoints on CIFAR-100 twenty tasks.
 
-|   1  |   2  |   3  |   4  |   5  |   6  |   7  |   8  |   9  |  10  |  11  |  12  |  13  |  14  |  15  |  16  |  17  |  18  |  19  |  20  |
-|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|
-| 67.0 | 78.2 | 77.0 | 79.4 | 85.0 | 83.8 | 80.0 | 82.8 | 81.6 | 87.6 | 86.8 | 82.6 | 87.6 | 81.4 | 51.8 | 71.2 | 69.4 | 70.2 | 86.6 | 92.0 |
+| Task |   1  |   2  |   3  |   4  |   5  |   6  |   7  |   8  |   9  |  10  |  11  |  12  |  13  |  14  |  15  |  16  |  17  |  18  |  19  |  20  |
+|------|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|
+| Acc. | 67.0 | 78.2 | 77.0 | 79.4 | 85.0 | 83.8 | 80.0 | 82.8 | 81.6 | 87.6 | 86.8 | 82.6 | 87.6 | 81.4 | 51.8 | 71.2 | 69.4 | 70.2 | 86.6 | 92.0 |
+
 
 ## Experiment2 (Compact 6 tasks into VGG16/ResNet50 network)  
 - Datasets: We provide [the 5 tasks datasets](https://drive.google.com/file/d/1a-FiCtYO_7nRcI9eIHrlZysq_0N3Sh2P/view?usp=sharing), including cubs_cropped,  stanford_cars_cropped, flowers, wikiart, and sketches. (**without ImageNet**).  
@@ -81,7 +82,7 @@ $ bash experiment1/inference_CPG_cifar100_result.sh
 
 `Step 3. Manually write each task's accuracy goal into json file`
 
-#### For example, for VGG16, I will create logs/baseline_imagenet_acc_custom_vgg.txt
+### For example, for VGG16, I will create logs/baseline_imagenet_acc_custom_vgg.txt
 , and write accuracy goal according to [piggyback](https://arxiv.org/pdf/1801.06519.pdf) paper. 
 ```
 {"imagenet": "0.7336", "cubs_cropped": "0.8023", "stanford_cars_cropped": "0.9059", "flowers": "0.9545", "wikiart": "0.7332", "sketches": "0.7808"}
@@ -121,5 +122,11 @@ In CPG_imagenet_vgg.sh
 line 49: for task_id in `seq 2 2`; do
 ```
 Then we repeat the check procedure to the second task, we check ```checkpoints/CPG/custom_vgg/cubs_cropped/gradual_prune/record.txt``` and copy the appropriate checkpoint with best pruning ratio to the upper folder, and again to the third, fourth tasks, ...
+
+### CPG-ResNet50 Checkpoints on fine-grained dataset.
+
+| Task | ImageNet |  CUBS | Stanford Cars | Flowers | Wikiart | Sketch |
+|:----:|:--------:|:-----:|:-------------:|:-------:|:-------:|:------:|
+| Acc. |   75.81  | 83.59 |     92.80     |  96.62  |  77.15  |  80.33 |
 
 
