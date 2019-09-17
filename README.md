@@ -63,6 +63,11 @@ $ bash experiment1/inference_CPG_cifar100_result.sh
 ```
 
 ---
+#### Checkpoints
+
+|   1  |   2  |   3  |   4  |   5  |   6  |   7  |   8  |   9  |  10  |  11  |  12  |  13  |  14  |  15  |  16  |  17  |  18  |  19  |  20  |
+|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|
+| 67.0 | 78.2 | 77.0 | 79.4 | 85.0 | 83.8 | 80.0 | 82.8 | 81.6 | 87.6 | 86.8 | 82.6 | 87.6 | 81.4 | 51.8 | 71.2 | 69.4 | 70.2 | 86.6 | 92.0 |
 
 ## Experiment2 (Compact 6 tasks into VGG16/ResNet50 network)  
 - Datasets: We provide [the 5 tasks datasets](https://drive.google.com/file/d/1a-FiCtYO_7nRcI9eIHrlZysq_0N3Sh2P/view?usp=sharing), including cubs_cropped,  stanford_cars_cropped, flowers, wikiart, and sketches. (**without ImageNet**).  
