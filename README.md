@@ -63,7 +63,7 @@ $ bash experiment1/inference_CPG_cifar100_result.sh
 ```
 
 ---
-### CPG-VGG16 Checkpoints on CIFAR-100 twenty tasks.
+### CPG-VGG16 Checkpoints on CIFAR-100 Twenty Tasks.
 
 | Task |   1  |   2  |   3  |   4  |   5  |   6  |   7  |   8  |   9  |  10  |  11  |  12  |  13  |  14  |  15  |  16  |  17  |  18  |  19  |  20  |
 |------|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|
@@ -123,7 +123,7 @@ line 49: for task_id in `seq 2 2`; do
 ```
 Then we repeat the check procedure to the second task, we check ```checkpoints/CPG/custom_vgg/cubs_cropped/gradual_prune/record.txt``` and copy the appropriate checkpoint with best pruning ratio to the upper folder, and again to the third, fourth tasks, ...
 
-### CPG-ResNet50 Checkpoints on fine-grained dataset.
+### CPG-ResNet50 Checkpoints on Fine-grained Dataset.
 
 | Task | ImageNet |  CUBS | Stanford Cars | Flowers | Wikiart | Sketch |
 |:----:|:--------:|:-----:|:-------------:|:-------:|:-------:|:------:|
