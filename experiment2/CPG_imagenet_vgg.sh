@@ -51,7 +51,7 @@ for task_id in `seq 1 1`; do
     while [ $state -eq 2 ]; do
         if [ "$task_id" != "1" ]
         then
-            CUDA_VISIBLE_DEVICES=$GPU_ID python CPG_imagenet_main_2.py \
+            CUDA_VISIBLE_DEVICES=$GPU_ID python CPG_imagenet_main.py \
                 --arch $arch \
                 --dataset ${dataset[task_id]} --num_classes ${num_classes[task_id]} \
                 --lr ${init_lr[task_id]} \
