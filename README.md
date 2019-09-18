@@ -64,7 +64,7 @@ $ bash experiment1/inference_CPG_cifar100_result.sh
 
 ---
 ### CPG-VGG16 [Checkpoints](https://drive.google.com/open?id=1Zc4MJGPMcWSUkxw2j2Zy7s18jDUALkwc) on CIFAR-100 Twenty Tasks.
--unzip it in **checkpoints** folder.
+`-unzip it in **checkpoints** folder.`
 
 | Task |   1  |   2  |   3  |   4  |   5  |   6  |   7  |   8  |   9  |  10  |  11  |  12  |  13  |  14  |  15  |  16  |  17  |  18  |  19  |  20  |
 |------|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|
@@ -126,7 +126,7 @@ Then we repeat the check procedure to the second task, we check ```checkpoints/C
 
 ---
 ### CPG-ResNet50 [Checkpoints](https://drive.google.com/file/d/1oYTQkNPo8JJ7lqKUKrAcu0T3ZAwe7C6r/view?usp=sharing) on Fine-grained Dataset.
--unzip it in **checkpoints** folder.
+`unzip it in **checkpoints** folder`
 
 | Task | ImageNet |  CUBS | Stanford Cars | Flowers | Wikiart | Sketch |
 |:----:|:--------:|:-----:|:-------------:|:-------:|:-------:|:------:|
