@@ -62,14 +62,14 @@ $ bash experiment1/CPG_cifar100_scratch_mul_1.5.sh
 $ bash experiment1/inference_CPG_cifar100_result.sh
 ```
 
----
+
 ### CPG-VGG16 [Checkpoints](https://drive.google.com/open?id=1Zc4MJGPMcWSUkxw2j2Zy7s18jDUALkwc) on CIFAR-100 Twenty Tasks.
 `-unzip it in the "checkpoints" folder.`
 
 | Task |   1  |   2  |   3  |   4  |   5  |   6  |   7  |   8  |   9  |  10  |  11  |  12  |  13  |  14  |  15  |  16  |  17  |  18  |  19  |  20  |
 |------|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|
 | Acc. | 67.0 | 78.2 | 77.0 | 79.4 | 85.0 | 83.8 | 80.0 | 82.8 | 81.6 | 87.6 | 86.8 | 82.6 | 87.6 | 81.4 | 51.8 | 71.2 | 69.4 | 70.2 | 86.6 | 92.0 |
-
+---
 
 ## Experiment2 (Compact 6 tasks into VGG16/ResNet50 network)  
 - Datasets: We provide [the 5 tasks datasets](https://drive.google.com/file/d/1a-FiCtYO_7nRcI9eIHrlZysq_0N3Sh2P/view?usp=sharing), including cubs_cropped,  stanford_cars_cropped, flowers, wikiart, and sketches. (**without ImageNet**).  
@@ -123,8 +123,8 @@ In CPG_imagenet_vgg.sh
 line 49: for task_id in `seq 2 2`; do
 ```
 Then we repeat the check procedure to the second task, we check ```checkpoints/CPG/custom_vgg/cubs_cropped/gradual_prune/record.txt``` and copy the appropriate checkpoint with best pruning ratio to the upper folder, and again to the third, fourth tasks, ...
+```
 
----
 ### CPG-ResNet50 [Checkpoints](https://drive.google.com/file/d/1oYTQkNPo8JJ7lqKUKrAcu0T3ZAwe7C6r/view?usp=sharing) on Fine-grained Dataset.
 `unzip it in the "checkpoints" folder`
 
@@ -132,4 +132,5 @@ Then we repeat the check procedure to the second task, we check ```checkpoints/C
 |:----:|:--------:|:-----:|:-------------:|:-------:|:-------:|:------:|
 | Acc. |   75.81  | 83.59 |     92.80     |  96.62  |  77.15  |  80.33 |
 
+---
 
