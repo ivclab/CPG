@@ -135,8 +135,8 @@ Then we repeat the check procedure to the second task, we check ```checkpoints/C
 
 ## Benchmarking
 
-### Cifar100 20 Tasks (datsets as experiment1 above)
-*VGG16 backbone
+### Cifar100 20 Tasks (datsets as experiment1 above) - VGG16 
+
 | Methods | 1    | 2    | 3    | 4    | 5    | 6    | 7    | 8    | 9    | 10   | 11   | 12   | 13   | 14   | 15   | 16   | 17   | 18   | 19   | 20   | Avg. |
 |---------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|
 | [PackNet](https://github.com/arunmallya/packnet) | 66.4 | 80.0 | 76.2 | 78.4 | 80.0 | 79.8 | 67.8 | 61.4 | 68.8 | 77.2 | 79.0 | 59.4 | 66.4 | 57.2 | 36.0 | 54.2 | 51.6 | 58.8 | 67.8 | 83.2 | 67.5 |
@@ -145,9 +145,9 @@ Then we repeat the check procedure to the second task, we check ```checkpoints/C
 
 *PAE is our previous work.
 
-### Fine-grained 6 Tasks (datsets as experiment2 above)
-*RestNet50 Backboone
-|      Method   | ImageNet |  CUBS | Stanford Cars | Flowers | Wikiart | Sketch | Model Size (MB) |
+### Fine-grained 6 Tasks (datsets as experiment2 above) - ResNet50
+
+|      Method     | ImageNet |  CUBS | Stanford Cars | Flowers | Wikiart | Sketch | Model Size (MB) |
 |:---------------:|:--------:|:-----:|:-------------:|:-------:|:-------:|:------:|:---------------:|
 |     [PackNet](https://github.com/arunmallya/packnet)      |   75.71  | 80.41 |     86.11     |  93.04  |  69.40  |  76.17 |       115       |
 |    [Piggyback](https://github.com/arunmallya/piggyback)    |   76.16  | 81.59 |     89.62     |  94.77  |  71.33  |  79.91 |       121       |
