@@ -141,9 +141,9 @@ Then we repeat the check procedure to the second task, we check ```checkpoints/C
 |---------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|
 | [PackNet](https://github.com/arunmallya/packnet) | 66.4 | 80.0 | 76.2 | 78.4 | 80.0 | 79.8 | 67.8 | 61.4 | 68.8 | 77.2 | 79.0 | 59.4 | 66.4 | 57.2 | 36.0 | 54.2 | 51.6 | 58.8 | 67.8 | 83.2 | 67.5 |
 | [PAE](https://github.com/ivclab/PAE)     | 67.2 | 77.0 | 78.6 | 76.0 | 84.4 | 81.2 | 77.6 | 80.0 | 80.4 | 87.8 | 85.4 | 77.8 | 79.4 | 79.6 | 51.2 | 68.4 | 68.6 | 68.6 | 83.2 | 88.8 | 77.1 |
-| CPG(ours)     | 65.2 | 76.6 | 79.8 | 81.4 | 86.6 | 84.8 | 83.4 | 85.0 | 84.2 | 89.2 | 90.8 | 82.4 | 85.6 | 85.2 | 53.2 | 84.4 | 70.0 | 73.4 | 88.8 | 94.8 | 80.9 |  
+| CPG (ours)     | 65.2 | 76.6 | 79.8 | 81.4 | 86.6 | 84.8 | 83.4 | 85.0 | 84.2 | 89.2 | 90.8 | 82.4 | 85.6 | 85.2 | 53.2 | 84.4 | 70.0 | 73.4 | 88.8 | 94.8 | 80.9 |  
 
-*PAE is our previous work.
+**PAE is our previous work.**
 
 ### Fine-grained 6 Tasks (as experiment2 above)
 
@@ -152,4 +152,4 @@ Then we repeat the check procedure to the second task, we check ```checkpoints/C
 |     [PackNet](https://github.com/arunmallya/packnet)      |   75.71  | 80.41 |     86.11     |  93.04  |  69.40  |  76.17 |       115       |
 |    [Piggyback](https://github.com/arunmallya/piggyback)    |   76.16  | 81.59 |     89.62     |  94.77  |  71.33  |  79.91 |       121       |
 | [ProgressiveNet](https://arxiv.org/abs/1606.04671) |   76.16  | 71.17 |     70.74     |  70.74  |  55.81  |  71.47 |       563       |
-|       CPG(ours)       |   75.81  | 83.59 |     92.80     |  96.62  |  77.15  |  80.33 |       121       |
+|       CPG (ours)       |   75.81  | 83.59 |     92.80     |  96.62  |  77.15  |  80.33 |       121       |
