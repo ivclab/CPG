@@ -135,7 +135,7 @@ Then we repeat the check procedure to the second task, we check ```checkpoints/C
 
 ## Benchmarking
 
-### Cifar100 20 Tasks (as experiment1 above)
+### Cifar100 20 Tasks (datsets as experiment1 above)
 
 | Methods | 1    | 2    | 3    | 4    | 5    | 6    | 7    | 8    | 9    | 10   | 11   | 12   | 13   | 14   | 15   | 16   | 17   | 18   | 19   | 20   | Avg. |
 |---------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|
@@ -145,7 +145,7 @@ Then we repeat the check procedure to the second task, we check ```checkpoints/C
 
 *PAE is our previous work.
 
-### Fine-grained 6 Tasks (as experiment2 above)
+### Fine-grained 6 Tasks (datsets as experiment2 above)
 
 |      Method     | ImageNet |  CUBS | Stanford Cars | Flowers | Wikiart | Sketch | Model Size (MB) |
 |:---------------:|:--------:|:-----:|:-------------:|:-------:|:-------:|:------:|:---------------:|
