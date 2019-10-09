@@ -151,7 +151,7 @@ Then we repeat the check procedure to the second task, we check ```checkpoints/C
 |:------------------:|:--------:|:-----:|:-------------:|:-------:|:-------:|:------:|:---------------:|
 | Train from Scratch |   76.16  | 40.96 |     61.56     |  59.73  |  56.50  |  75.40 |       554       |
 |      Finetune      |     -    | 82.83 |     91.83     |  96.56  |  75.60  |  80.78 |       551       |
-|   [ProgressiveNet](https://arxiv.org/abs/1606.04671)   |   76.16  | 41.56 |     71.17     |  70.74  |  55.81  |  74.47 |       563       |
+|   [ProgressiveNet](https://arxiv.org/abs/1606.04671)   |   76.16  | 78.94 |     89.21     |  93.41  |  74.94 |  76.35 |       563       |
 |       [PackNet](https://github.com/arunmallya/packnet)      |   75.71  | 80.41 |     86.11     |  93.04  |  69.40  |  76.17 |       115       |
 |      [Piggyback](https://github.com/arunmallya/piggyback)     |   76.16  | 84.59 |     89.62     |  94.77  |  71.33  |  79.91 |       121       |
 |         **CPG**        |   75.81  | 83.59 |     92.80     |  96.62  |  77.15  |  80.33 |       121       |
