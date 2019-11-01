@@ -12,7 +12,7 @@ This is an official Pytorch implementation of CPG - a lifelong learning algorith
 
 ## Experiment1 (Compact 20 tasks into VGG16 network)
 - Datasets: Cifar100. We splited 100 classes into 20 tasks. For each task, there are 5 new classes to learn.  
-            If you download [our splited Cifar100](https://drive.google.com/open?id=1AAn50an0pro2xyWGIABPtKmv_GKmoXQX) and unzip it in the **datasets** folder, you can skip the following Step 1.
+            If you download [our splited Cifar100](https://drive.google.com/file/d/1eo2RhMmhxzUNOZa0Z7jy7y4lOn3lqddU/view?usp=sharing) and unzip it in the **datasets** folder, you can skip the following Step 1.
 #### Demo
 
 `Step 1. Download Cifar100 and organize the folders to Pytorch data loading format`
