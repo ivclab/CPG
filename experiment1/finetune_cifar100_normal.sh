@@ -29,7 +29,7 @@ for task_id in `seq 1 20`; do
     if [ "$task_id" != "1" ]
     then
         echo "Start training task " $task_id
-        python random_generate_task_id.py --curr_task_id $task_id
+        python TOOLS/random_generate_task_id.py --curr_task_id $task_id
         initial_from_task_id=$?
         echo "Initial for curr task is " $initial_from_task_id
         CUDA_VISIBLE_DEVICES=$GPU_ID python packnet_cifar100_main_normal.py \

@@ -170,7 +170,7 @@ for task_id in `seq 1 20`; do
     fi
     
     # choose the checkpoint that we want
-    python choose_appropriate_pruning_ratio_for_next_task.py \
+    python TOOLS/choose_appropriate_pruning_ratio_for_next_task.py \
         --pruning_ratio_to_acc_record_file checkpoints/CPG/$setting/$arch/${dataset[task_id]}/gradual_prune/record.txt \
         --baseline_acc_file $baseline_cifar100_acc \
         --allow_acc_loss 0.0 \
@@ -202,7 +202,7 @@ for task_id in `seq 1 20`; do
     	    --finetune_again
          
         # If there is any improve from retraining, use that checkpoint
-        python choose_retrain_or_not.py \
+        python TOOLS/choose_retrain_or_not.py \
             --save_folder checkpoints/CPG/$setting/$arch/${dataset[task_id]}/gradual_prune \
             --load_folder checkpoints/CPG/$setting/$arch/${dataset[task_id]}/retrain 
     fi
