@@ -53,7 +53,7 @@ def cifar100_train_loader_two_class(dataset_name, train_batch_size, num_workers=
         normalize,
     ])
 
-    train_dataset = datasets.ImageFolder('/home/ivclab/fevemania/prac_DL/shrink_and_expand/data/'
+    train_dataset = datasets.ImageFolder('datasets/'
         'cifar100_2class/train/{}'.format(dataset_name),
             train_transform)
 
@@ -67,7 +67,7 @@ def cifar100_val_loader_two_class(dataset_name, val_batch_size, num_workers=4, p
             mean=[0.5071, 0.4866, 0.4409], std=[0.26, 0.2517, 0.268])
 
     val_dataset = \
-        datasets.ImageFolder('/home/ivclab/fevemania/prac_DL/shrink_and_expand/data/'
+        datasets.ImageFolder('datasets/'
             'cifar100_2class/test/{}'.format(
                 dataset_name),
                 transforms.Compose([
@@ -92,7 +92,7 @@ def cifar100_train_loader(dataset_name, train_batch_size, num_workers=4, pin_mem
         normalize,
     ])
 
-    train_dataset = datasets.ImageFolder('/home/ivclab/fevemania/prac_DL/shrink_and_expand/data/'
+    train_dataset = datasets.ImageFolder('datasets/'
         'cifar100_org/train/{}'.format(dataset_name),
             train_transform)
 
@@ -106,7 +106,7 @@ def cifar100_val_loader(dataset_name, val_batch_size, num_workers=4, pin_memory=
             mean=mean[dataset_name], std=std[dataset_name])
 
     val_dataset = \
-        datasets.ImageFolder('/home/ivclab/fevemania/prac_DL/shrink_and_expand/data/'
+        datasets.ImageFolder('datasets/'
            'cifar100_org/test/{}'.format(
                 dataset_name),
                 transforms.Compose([
