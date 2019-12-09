@@ -2,6 +2,17 @@
 
 This is an official Pytorch implementation of CPG - a lifelong learning algorithm for object classification. For details about CPG please refer to the paper [Compacting, Picking and Growing for Unforgetting Continual Learning](http://papers.nips.cc/paper/9518-compacting-picking-and-growing-for-unforgetting-continual-learning.pdf), (NeurIPS 2019)
 
+## Citing Paper
+Please cite following paper if these codes help your research:
+
+    @inproceedings{hung2019compacting,
+    title={Compacting, Picking and Growing for Unforgetting Continual Learning},
+    author={Hung, Ching-Yi and Tu, Cheng-Hao and Wu, Cheng-En and Chen, Chien-Hung and Chan, Yi-Ming and Chen, Chu-Song},
+    booktitle={Advances in Neural Information Processing Systems},
+    pages={13647--13657},
+    year={2019}
+    }
+
 ---
 
 ## Dependencies
