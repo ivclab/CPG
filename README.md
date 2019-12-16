@@ -1,6 +1,6 @@
 # Compacting, Picking and Growing (CPG)
 
-This is an official Pytorch implementation of CPG - a lifelong learning algorithm for object classification. For details about CPG please refer to the paper [Compacting, Picking and Growing for Unforgetting Continual Learning](http://papers.nips.cc/paper/9518-compacting-picking-and-growing-for-unforgetting-continual-learning.pdf), (NeurIPS 2019)
+This is an official Pytorch implementation of CPG - a lifelong learning algorithm for object classification. For details about CPG please refer to the paper [Compacting, Picking and Growing for Unforgetting Continual Learning](http://papers.nips.cc/paper/9518-compacting-picking-and-growing-for-unforgetting-continual-learning.pdf), (NeurIPS 2019, [Slides](https://github.com/ivclab/CPG/blob/master/docs/%5BSlides_PDF%5D19NeurIPS_unforgetting_continual_Learning.pdf),[Poster](https://github.com/ivclab/CPG/blob/master/docs/%5BPoster%5D19NeurIPS_unforgetting_continual_learning.pdf))
 
 ## Citing Paper
 Please cite following paper if these codes help your research:
