@@ -148,6 +148,10 @@ Then we repeat the check procedure to the second task, we check ```checkpoints/C
 |:----:|:--------:|:-----:|:-------------:|:-------:|:-------:|:------:|
 | Acc. |   75.81  | 83.59 |     92.80     |  96.62  |  77.15  |  80.33 |
 
+
+## Experiment3 
+
+
 ---
 
 ## Benchmarking
