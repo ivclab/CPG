@@ -11,7 +11,7 @@ import torch.optim as optim
 import torch.backends.cudnn as cudnn
 from torch.nn.parameter import Parameter
 
-import utils as utils
+import UTILS.utils as utils
 import pdb
 import os
 import math
