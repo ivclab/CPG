@@ -10,8 +10,9 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.backends.cudnn as cudnn
 from torch.nn.parameter import Parameter
+import torchvision.transforms as transforms
 
-import UTILS.utils as utils
+import FACE_UTILS as utils
 import pdb
 import os
 import math
@@ -21,41 +22,36 @@ import numpy as np
 from pprint import pprint
 
 import packnet_models
-from UTILS.packnet_manager import Manager
-import UTILS.dataset as dataset
+from FACE_UTILS.packnet_manager import Manager
+import FACE_UTILS.dataset as dataset
 import torch.utils.model_zoo as model_zoo
-import logging
+from FACE_UTILS.LFWDataset import LFWDataset
 
-model_urls = {
-    'vgg11': 'https://download.pytorch.org/models/vgg11-bbd30ac9.pth',
-    'vgg13': 'https://download.pytorch.org/models/vgg13-c768596a.pth',
-    'vgg16': 'https://download.pytorch.org/models/vgg16-397923af.pth',
-    'vgg19': 'https://download.pytorch.org/models/vgg19-dcbb9e9d.pth',
-    'vgg11_bn': 'https://download.pytorch.org/models/vgg11_bn-6002323d.pth',
-    'vgg13_bn': 'https://download.pytorch.org/models/vgg13_bn-abd245e5.pth',
-    'vgg16_bn': 'https://download.pytorch.org/models/vgg16_bn-6c64b313.pth',
-    'vgg19_bn': 'https://download.pytorch.org/models/vgg19_bn-c79401a0.pth',
-}
+
+#{{{ Arguments
+INIT_WEIGHT_PATH = 'common_data/face_weight.pth'
 
 # To prevent PIL warnings.
 warnings.filterwarnings("ignore")
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--arch', type=str, default='vgg16_bn_cifar100',
+parser.add_argument('--arch', type=str, default='vgg16_bn',
                    help='Architectures')
 parser.add_argument('--num_classes', type=int, default=-1,
                    help='Num outputs for dataset')
+
 # Optimization options.
 parser.add_argument('--lr', type=float, default=0.1,
                    help='Learning rate for parameters, used for baselines')
 
 parser.add_argument('--batch_size', type=int, default=32,
                    help='input batch size for training')
-parser.add_argument('--val_batch_size', type=int, default=100,
+parser.add_argument('--val_batch_size', type=int, default=32,
                    help='input batch size for validation')
 parser.add_argument('--workers', type=int, default=24, help='')
 parser.add_argument('--weight_decay', type=float, default=4e-5,
                    help='Weight decay')
+
 # Paths.
 parser.add_argument('--dataset', type=str, default='',
                    help='Name of dataset')
@@ -63,15 +59,16 @@ parser.add_argument('--train_path', type=str, default='',
                    help='Location of train data')
 parser.add_argument('--val_path', type=str, default='',
                    help='Location of test data')
+
 # Other.
 parser.add_argument('--cuda', action='store_true', default=True,
                    help='use CUDA')
 
 parser.add_argument('--seed', type=int, default=1, help='random seed')
 
-parser.add_argument('--checkpoint_format', type=str, 
-    default='./{save_folder}/checkpoint-{epoch}.pth.tar',
-    help='checkpoint file format')
+parser.add_argument('--checkpoint_format', type=str,
+                    default='./{save_folder}/checkpoint-{epoch}.pth.tar',
+                    help='checkpoint file format')
 
 parser.add_argument('--epochs', type=int, default=160,
                     help='number of epochs to train')
@@ -79,19 +76,19 @@ parser.add_argument('--restore_epoch', type=int, default=0, help='')
 parser.add_argument('--save_folder', type=str,
                     help='folder name inside one_check folder')
 parser.add_argument('--load_folder', default='', help='')
-
-# parser.add_argument('--datadir', default='/home/ivclab/decathlon-1.0/', 
-#                    help='folder containing data folder')
-# parser.add_argument('--imdbdir', default='/home/ivclab/decathlon-1.0/annotations', 
-#                    help='annotation folder')
-
 parser.add_argument('--one_shot_prune_perc', type=float, default=0.5,
                    help='% of neurons to prune per layer')
 parser.add_argument('--mode',
                    choices=['finetune', 'prune', 'inference'],
                    help='Run mode')
 parser.add_argument('--logfile', type=str, help='file to save baseline accuracy')
-parser.add_argument('--initial_from_task', type=str, help='')
+parser.add_argument('--jsonfile', type=str, help='file to restore baseline validation accuracy')
+parser.add_argument('--use_vgg_pretrained', action='store_true', default=False,
+                    help='')
+#}}}
+
+
+#{{{ Multiple optimizers
 class Optimizers(object):
     def __init__(self):
         self.optimizers = []
@@ -115,11 +112,13 @@ class Optimizers(object):
 
     def __setitem__(self, index, value):
         self.optimizers[index] = value
+#}}}
+
 
 def main():
     """Do stuff."""
+    #{{{ Setting arguments, resume epochs and datasets
     args = parser.parse_args()
-    # args.batch_size = args.batch_size * torch.cuda.device_count()
     if args.save_folder and not os.path.isdir(args.save_folder):
         os.makedirs(args.save_folder)
 
@@ -147,7 +146,7 @@ def main():
 
     # Set default train and test path if not provided as input.
     utils.set_dataset_paths(args)
-                        
+
     if resume_from_epoch:
         filepath = args.checkpoint_format.format(save_folder=resume_folder, epoch=resume_from_epoch)
         checkpoint = torch.load(filepath)
@@ -159,21 +158,19 @@ def main():
             shared_layer_info = checkpoint['shared_layer_info']
         else:
             shared_layer_info = {}
-
-        if 'num_for_construct' in checkpoint_keys:
-            num_for_construct = checkpoint['num_for_construct']
     else:
         dataset_history = []
         dataset2num_classes = {}
         masks = {}
         shared_layer_info = {}
 
-    if args.arch == 'vgg16_bn_cifar100':
-        model = packnet_models.__dict__[args.arch](pretrained=False, dataset_history=dataset_history, dataset2num_classes=dataset2num_classes)
+    if args.arch == 'spherenet20':
+        model = packnet_models.__dict__[args.arch](dataset_history=dataset_history, dataset2num_classes=dataset2num_classes,
+                    shared_layer_info=shared_layer_info)
     else:
         print('Error!')
         sys.exit(0)
-    
+
     # Add and set the model dataset.
     model.add_dataset(args.dataset, args.num_classes)
     model.set_dataset(args.dataset)
@@ -185,34 +182,33 @@ def main():
             'bn_layer_running_var': {},
             'bn_layer_weight': {},
             'bn_layer_bias': {},
-            'fc_bias': {}
+            'fc_bias': {},
+            'prelu_layer_weight': {}
         }
 
-    model = nn.DataParallel(model)
-    model = model.cuda()
-    if args.initial_from_task and 'None' not in args.initial_from_task:
-        filepath = ''
-        for try_epoch in range(200, 0, -1):
-            if os.path.exists(args.checkpoint_format.format(
-                save_folder=args.initial_from_task, epoch=try_epoch)):
-                filepath = args.checkpoint_format.format(save_folder=args.initial_from_task, epoch=try_epoch)
-                break
-        if filepath == '':
-            pdb.set_trace()
-            print('Something is wrong')
-        checkpoint = torch.load(filepath)
-        state_dict = checkpoint['model_state_dict']
-        curr_model_state_dict = model.module.state_dict()
-        
-        for name, param in state_dict.items():
-            if 'num_batches_tracked' in name:
-                continue
-            try:
-                curr_model_state_dict[name][:].copy_(param)
-            except:
-                pdb.set_trace()
-                print('here')
- 
+    if args.cuda:
+        # Move model to GPU
+        model = nn.DataParallel(model)
+        model = model.cuda()
+    #}}}
+
+    if args.use_vgg_pretrained and model.module.datasets.index(args.dataset) == 0:
+        print('Initialize vgg face')
+        curr_model_state_dict = model.state_dict()
+        state_dict = torch.load(INIT_WEIGHT_PATH)
+        if args.arch == 'spherenet20':
+            for name, param in state_dict.items():
+                if 'fc' not in name:
+                    curr_model_state_dict['module.' + name].copy_(param)
+            if args.dataset == 'face_verification':
+                curr_model_state_dict['module.classifiers.0.weight'].copy_(state_dict['fc5.weight'])
+                curr_model_state_dict['module.classifiers.0.bias'].copy_(state_dict['fc5.bias'])
+                curr_model_state_dict['module.classifiers.1.weight'].copy_(state_dict['fc6.weight'])
+        else:
+            print("Currently, we didn't define the mapping of {} between vgg pretrained weight and our model".format(args.arch))
+            sys.exit(5)
+
+    #{{{ Initializing mask
     if not masks:
         for name, module in model.named_modules():
             if isinstance(module, nn.Conv2d) or isinstance(module, nn.Linear):
@@ -222,56 +218,66 @@ def main():
                 if 'cuda' in module.weight.data.type():
                     mask = mask.cuda()
                 masks[name] = mask
+    #}}}
 
-    if args.num_classes == 2:
-        train_loader = dataset.cifar100_train_loader_two_class(args.dataset, args.batch_size)
-        val_loader = dataset.cifar100_val_loader_two_class(args.dataset, args.val_batch_size)
-    elif args.num_classes == 5:
-        train_loader = dataset.cifar100_train_loader(args.dataset, args.batch_size)
-        val_loader = dataset.cifar100_val_loader(args.dataset, args.val_batch_size)
+    #{{{ Data loader
+    train_loader = dataset.train_loader(args.train_path, args.batch_size)
+    if args.dataset == 'face_verification':
+        kwargs = {'num_workers': 2, 'pin_memory': True} if torch.cuda.is_available() else {}
+        val_loader = torch.utils.data.DataLoader(
+                LFWDataset(dir=args.val_path, pairs_path='lfw_pairs.txt',
+                                transform=transforms.Compose([
+                                    transforms.Resize(112),
+                                    transforms.ToTensor(),
+                                    transforms.Normalize(mean=[0.5, 0.5, 0.5],
+                                                         std= [0.5, 0.5, 0.5])])),
+                    batch_size=args.val_batch_size, shuffle=False, **kwargs)
     else:
-        print("num_classes should be either 2 or 5")
-        sys.exit(1)
-        
+        val_loader = dataset.val_loader(args.val_path, args.val_batch_size)
+    #}}}
+
     # if we are going to save checkpoint in other folder, then we recalculate the starting epoch
     if args.save_folder != args.load_folder:
         start_epoch = 0
     else:
         start_epoch = resume_from_epoch
-    
+
     manager = Manager(args, model, shared_layer_info, masks, train_loader, val_loader)
-    
+
     if args.mode == 'inference':
         manager.load_checkpoint_for_inference(resume_from_epoch, resume_folder)
         manager.validate(resume_from_epoch-1)
         return
 
+    #{{{ Setting optimizers
     lr = args.lr
     # update all layers
     named_params = dict(model.named_parameters())
     params_to_optimize_via_SGD = []
-    named_params_to_optimize_via_SGD = []
-    masks_to_optimize_via_SGD = []
-    named_masks_to_optimize_via_SGD = []
+    named_of_params_to_optimize_via_SGD = []
 
-    for tuple_ in named_params.items():
-        if 'classifiers' in tuple_[0]:
-            if '.{}.'.format(model.module.datasets.index(args.dataset)) in tuple_[0]:
-                params_to_optimize_via_SGD.append(tuple_[1])
-                named_params_to_optimize_via_SGD.append(tuple_)                
+    for name, param in named_params.items():
+        if 'classifiers' in name:
+            if '.{}.'.format(model.module.datasets.index(args.dataset)) in name:
+                params_to_optimize_via_SGD.append(param)
+                named_of_params_to_optimize_via_SGD.append(name)
             continue
         else:
-            params_to_optimize_via_SGD.append(tuple_[1])
-            named_params_to_optimize_via_SGD.append(tuple_)
+            params_to_optimize_via_SGD.append(param)
+            named_of_params_to_optimize_via_SGD.append(name)
 
-    # here we must set weight decay to 0.0, 
+    # Here we must set weight decay to 0.0,
     # because the weight decay strategy in build-in step() function will change every weight elem in the tensor,
     # which will hurt previous tasks' accuracy. (Instead, we do weight decay ourself in the `prune.py`)
+    ## TODO HERE: TRY DIFFERENT OPTIMS
     optimizer_network = optim.SGD(params_to_optimize_via_SGD, lr=lr,
-                          weight_decay=0.0, momentum=0.9, nesterov=True)  
+                          weight_decay=0.0, momentum=0.9, nesterov=True)
+    # optimizer_network = optim.Adam(params_to_optimize_via_SGD, lr=lr,
+    #                         weight_decay=0.0)
 
     optimizers = Optimizers()
     optimizers.add(optimizer_network, lr)
+    #}}}
 
     manager.load_checkpoint(optimizers, resume_from_epoch, resume_folder)
 
@@ -281,14 +287,17 @@ def main():
         for param_group in optimizer.param_groups:
             curr_lrs.append(param_group['lr'])
             break
-    
+
     if start_epoch != 0:
         curr_best_accuracy = manager.validate(start_epoch-1)
     elif args.mode == 'prune':
         print()
         print('Sparsity ratio: {}'.format(args.one_shot_prune_perc))
         print('Before pruning: ')
-        baseline_acc = manager.validate(start_epoch-1)
+        with open(args.jsonfile, 'r') as jsonfile:
+            json_data = json.load(jsonfile)
+            baseline_acc = float(json_data[args.dataset])
+        # baseline_acc = manager.validate(start_epoch-1)
         print('Execute one shot pruning ...')
         manager.one_shot_prune(args.one_shot_prune_perc)
     else:
@@ -296,24 +305,44 @@ def main():
 
     if args.mode == 'finetune':
         manager.pruner.make_finetuning_mask()
-        history_best_val_acc = 0.0
+        # Use the model pretrained on face_verification task (no more finetuning required)
+        if args.dataset == 'face_verification':
+            print('Finetuning face verification, use the pretrained weights directly')
+            avg_val_acc = manager.evalLFW(0)
+            manager.save_checkpoint(optimizers, 0, args.save_folder)
+            if args.logfile:
+                json_data = {}
+                if os.path.isfile(args.logfile):
+                    with open(args.logfile) as json_file:
+                        json_data = json.load(json_file)
 
+                json_data[args.dataset] = '{:.4f}'.format(avg_val_acc)
+
+                with open(args.logfile, 'w') as json_file:
+                    json.dump(json_data, json_file)
+            return
+
+        history_best_val_acc = 0.0
+        num_epochs_that_criterion_does_not_get_better = 0
+        times_of_decaying_learning_rate = 0
+
+    #{{{ Training Loop
     for epoch_idx in range(start_epoch, args.epochs):
         avg_train_acc = manager.train(optimizers, epoch_idx, curr_lrs)
-        avg_val_acc = manager.validate(epoch_idx)
+        if args.dataset == 'face_verification':
+            avg_val_acc = manager.evalLFW(epoch_idx)
+        else:
+            avg_val_acc = manager.validate(epoch_idx)
 
         if args.mode == 'finetune':
-            if epoch_idx + 1 == 50 or epoch_idx + 1 == 80:
-                for param_group in optimizers[0].param_groups:
-                    param_group['lr'] *= 0.1
-                curr_lrs[0] = param_group['lr']
             if avg_val_acc > history_best_val_acc:
+                num_epochs_that_criterion_does_not_get_better = 0
                 history_best_val_acc = avg_val_acc
                 if args.save_folder is not None:
                     paths = os.listdir(args.save_folder)
                     if paths and '.pth.tar' in paths[0]:
                         for checkpoint_file in paths:
-                            os.remove(os.path.join(args.save_folder, checkpoint_file))                    
+                            os.remove(os.path.join(args.save_folder, checkpoint_file))
                 else:
                     print('Something is wrong! Block the program with pdb')
                     pdb.set_trace()
@@ -330,6 +359,26 @@ def main():
 
                     with open(args.logfile, 'w') as json_file:
                         json.dump(json_data, json_file)
+            else:
+                num_epochs_that_criterion_does_not_get_better += 1
+
+            if times_of_decaying_learning_rate >= 3:
+                print()
+                print("times_of_decaying_learning_rate reach {}, stop training".format(
+                        times_of_decaying_learning_rate))
+
+                break
+
+            if num_epochs_that_criterion_does_not_get_better >= 10:
+                times_of_decaying_learning_rate += 1
+                num_epochs_that_criterion_does_not_get_better = 0
+                for param_group in optimizers[0].param_groups:
+                    param_group['lr'] *= 0.1
+                curr_lrs[0] = param_group['lr']
+                print()
+                print("continously {} epochs doesn't get higher acc, "
+                      "decay learning rate by multiplying 0.1".format(
+                        num_epochs_that_criterion_does_not_get_better))
 
         if args.mode == 'prune':
             if epoch_idx + 1 == 40:
@@ -347,6 +396,7 @@ def main():
             print('Cannot prune any more!')
 
     print('-' * 16)
+    #}}}
 
 if __name__ == '__main__':
   main()
