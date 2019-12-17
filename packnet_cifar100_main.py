@@ -21,8 +21,8 @@ import numpy as np
 from pprint import pprint
 
 import packnet_models
-from packnet_manager import Manager
-import dataset
+from UTILS.packnet_manager import Manager
+import UTILS.dataset as dataset
 import torch.utils.model_zoo as model_zoo
 import logging
 
