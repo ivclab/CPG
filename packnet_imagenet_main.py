@@ -1,6 +1,4 @@
 """Main entry point for doing all stuff."""
-from __future__ import division, print_function
-
 import argparse
 import json
 import warnings
@@ -9,21 +7,22 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.backends.cudnn as cudnn
+import torch.utils.model_zoo as model_zoo
 from torch.nn.parameter import Parameter
 
-import UTILS.utils as utils
-import pdb
 import os
+import sys
+import pdb
 import math
 from tqdm import tqdm
-import sys
 import numpy as np
-from pprint import pprint
 
+import utils
+from utils import Optimizers
+from utils.packnet_manager import Manager
+import utils.fine_grained_dataset as dataset
 import packnet_models
-from UTILS.packnet_manager import Manager
-import UTILS.dataset as dataset
-import torch.utils.model_zoo as model_zoo
+
 
 model_urls = {
     'vgg11': 'https://download.pytorch.org/models/vgg11-bbd30ac9.pth',
@@ -38,8 +37,9 @@ model_urls = {
     'resnet34': 'https://download.pytorch.org/models/resnet34-333f7ec4.pth',
     'resnet50': 'https://download.pytorch.org/models/resnet50-19c8e357.pth',
     'resnet101': 'https://download.pytorch.org/models/resnet101-5d3b4d8f.pth',
-    'resnet152': 'https://download.pytorch.org/models/resnet152-b121ed2d.pth',    
+    'resnet152': 'https://download.pytorch.org/models/resnet152-b121ed2d.pth',
 }
+
 
 # To prevent PIL warnings.
 warnings.filterwarnings("ignore")
@@ -49,6 +49,7 @@ parser.add_argument('--arch', type=str, default='vgg16_bn',
                    help='Architectures')
 parser.add_argument('--num_classes', type=int, default=-1,
                    help='Num outputs for dataset')
+
 # Optimization options.
 parser.add_argument('--lr', type=float, default=0.1,
                    help='Learning rate for parameters, used for baselines')
@@ -60,6 +61,7 @@ parser.add_argument('--val_batch_size', type=int, default=100,
 parser.add_argument('--workers', type=int, default=24, help='')
 parser.add_argument('--weight_decay', type=float, default=4e-5,
                    help='Weight decay')
+
 # Paths.
 parser.add_argument('--dataset', type=str, default='',
                    help='Name of dataset')
@@ -67,28 +69,20 @@ parser.add_argument('--train_path', type=str, default='',
                    help='Location of train data')
 parser.add_argument('--val_path', type=str, default='',
                    help='Location of test data')
+
 # Other.
 parser.add_argument('--cuda', action='store_true', default=True,
                    help='use CUDA')
-
 parser.add_argument('--seed', type=int, default=1, help='random seed')
-
-parser.add_argument('--checkpoint_format', type=str, 
-    default='./{save_folder}/checkpoint-{epoch}.pth.tar',
-    help='checkpoint file format')
-
+parser.add_argument('--checkpoint_format', type=str,
+                    default='./{save_folder}/checkpoint-{epoch}.pth.tar',
+                    help='checkpoint file format')
 parser.add_argument('--epochs', type=int, default=160,
                     help='number of epochs to train')
 parser.add_argument('--restore_epoch', type=int, default=0, help='')
 parser.add_argument('--save_folder', type=str,
                     help='folder name inside one_check folder')
 parser.add_argument('--load_folder', default='', help='')
-
-# parser.add_argument('--datadir', default='/home/ivclab/decathlon-1.0/', 
-#                    help='folder containing data folder')
-# parser.add_argument('--imdbdir', default='/home/ivclab/decathlon-1.0/annotations', 
-#                    help='annotation folder')
-
 parser.add_argument('--one_shot_prune_perc', type=float, default=0.5,
                    help='% of neurons to prune per layer')
 parser.add_argument('--mode',
@@ -99,34 +93,10 @@ parser.add_argument('--use_imagenet_pretrained', action='store_true', default=Fa
                     help='')
 parser.add_argument('--jsonfile', type=str, help='file to restore baseline validation accuracy')
 
-class Optimizers(object):
-    def __init__(self):
-        self.optimizers = []
-        self.lrs = []
-        # self.args = args
-
-    def add(self, optimizer, lr):
-        self.optimizers.append(optimizer)
-        self.lrs.append(lr)
-
-    def step(self):
-        for optimizer in self.optimizers:
-            optimizer.step()
-
-    def zero_grad(self):
-        for optimizer in self.optimizers:
-            optimizer.zero_grad()
-
-    def __getitem__(self, index):
-        return self.optimizers[index]
-
-    def __setitem__(self, index, value):
-        self.optimizers[index] = value
 
 def main():
     """Do stuff."""
     args = parser.parse_args()
-    #args.batch_size = args.batch_size * torch.cuda.device_count()
     if args.save_folder and not os.path.isdir(args.save_folder):
         os.makedirs(args.save_folder)
 
@@ -154,7 +124,7 @@ def main():
 
     # Set default train and test path if not provided as input.
     utils.set_dataset_paths(args)
-                        
+
     if resume_from_epoch:
         filepath = args.checkpoint_format.format(save_folder=resume_folder, epoch=resume_from_epoch)
         checkpoint = torch.load(filepath)
@@ -179,8 +149,8 @@ def main():
     else:
         print('Error!')
         sys.exit(0)
-    
-    # Add and set the model dataset.
+
+    # Add and set the model dataset
     model.add_dataset(args.dataset, args.num_classes)
     model.set_dataset(args.dataset)
 
@@ -188,7 +158,7 @@ def main():
     model = nn.DataParallel(model)
     model = model.cuda()
 
-    # For datasets whose image_size is 224 and also the first task  
+    # For datasets whose image_size is 224 and also the first task
     if args.use_imagenet_pretrained and model.module.datasets.index(args.dataset) == 0:
         curr_model_state_dict = model.state_dict()
         if args.arch == 'vgg16_bn':
@@ -204,7 +174,7 @@ def main():
             if args.dataset == 'imagenet':
                 curr_model_state_dict['module.classifiers.0.weight'].copy_(state_dict['classifier.6.weight'])
                 curr_model_state_dict['module.classifiers.0.bias'].copy_(state_dict['classifier.6.bias'])
-        elif args.arch == 'resnet50':            
+        elif args.arch == 'resnet50':
             state_dict = model_zoo.load_url(model_urls['resnet50'])
             for name, param in state_dict.items():
                 if 'fc' not in name:
@@ -248,9 +218,9 @@ def main():
         start_epoch = 0
     else:
         start_epoch = resume_from_epoch
-    
+
     manager = Manager(args, model, shared_layer_info, masks, train_loader, val_loader)
-    
+
     if args.mode == 'inference':
         manager.load_checkpoint_for_inference(resume_from_epoch, resume_folder)
         manager.validate(resume_from_epoch-1)
@@ -266,17 +236,17 @@ def main():
         if 'classifiers' in name:
             if '.{}.'.format(model.module.datasets.index(args.dataset)) in name:
                 params_to_optimize_via_SGD.append(param)
-                named_of_params_to_optimize_via_SGD.append(name)                
+                named_of_params_to_optimize_via_SGD.append(name)
             continue
         else:
             params_to_optimize_via_SGD.append(param)
             named_of_params_to_optimize_via_SGD.append(name)
 
-    # here we must set weight decay to 0.0, 
+    # here we must set weight decay to 0.0,
     # because the weight decay strategy in build-in step() function will change every weight elem in the tensor,
     # which will hurt previous tasks' accuracy. (Instead, we do weight decay ourself in the `prune.py`)
     optimizer_network = optim.SGD(params_to_optimize_via_SGD, lr=lr,
-                          weight_decay=0.0, momentum=0.9, nesterov=True)  
+                          weight_decay=0.0, momentum=0.9, nesterov=True)
 
     optimizers = Optimizers()
     optimizers.add(optimizer_network, lr)
@@ -289,14 +259,14 @@ def main():
         for param_group in optimizer.param_groups:
             curr_lrs.append(param_group['lr'])
             break
-    
+
     if start_epoch != 0:
         curr_best_accuracy = manager.validate(start_epoch-1)
     elif args.mode == 'prune':
         print()
         print('Sparsity ratio: {}'.format(args.one_shot_prune_perc))
         print('Before pruning: ')
-        with open(args.jsonfile, 'r') as jsonfile: 
+        with open(args.jsonfile, 'r') as jsonfile:
             json_data = json.load(jsonfile)
             baseline_acc = float(json_data[args.dataset])
         # baseline_acc = manager.validate(start_epoch-1)
@@ -338,7 +308,7 @@ def main():
                     paths = os.listdir(args.save_folder)
                     if paths and '.pth.tar' in paths[0]:
                         for checkpoint_file in paths:
-                            os.remove(os.path.join(args.save_folder, checkpoint_file))                    
+                            os.remove(os.path.join(args.save_folder, checkpoint_file))
                 else:
                     print('Something is wrong! Block the program with pdb')
                     pdb.set_trace()

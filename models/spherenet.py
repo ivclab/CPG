@@ -37,13 +37,19 @@ class AngleLoss(nn.Module):
 
         index = cos_theta.data * 0.0
         index.scatter_(1,target.data.view(-1,1),1)
-        index = index.byte()
+        # index = index.byte()
+        index = index.float()
         index = Variable(index)
 
         self.lamb = max(self.LambdaMin,self.LambdaMax/(1+0.1*self.it ))
+
+        # output = cos_theta * 1.0
+        # output[index] -= cos_theta[index]*(1.0+0)/(1+self.lamb)
+        # output[index] += phi_theta[index]*(1.0+0)/(1+self.lamb)
+
         output = cos_theta * 1.0
-        output[index] -= cos_theta[index]*(1.0+0)/(1+self.lamb)
-        output[index] += phi_theta[index]*(1.0+0)/(1+self.lamb)
+        output -= cos_theta * index *(1.0+0)/(1+self.lamb)
+        output += phi_theta * index *(1.0+0)/(1+self.lamb)
 
         logpt = F.log_softmax(output,dim=1)
         logpt = logpt.gather(1,target)

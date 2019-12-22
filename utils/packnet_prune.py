@@ -1,13 +1,6 @@
-"""Handles all the pruning-related stuff."""
-from __future__ import print_function
-
-import collections
-
-import numpy as np
-
 import torch
 import torch.nn as nn
-import pdb
+
 
 class SparsePruner(object):
     """Performs pruning on the given model."""
@@ -24,6 +17,7 @@ class SparsePruner(object):
         valid_key = list(masks.keys())[0]
         self.current_dataset_idx = masks[valid_key].max()
         self.inference_dataset_idx = inference_dataset_idx
+        return
 
     def _pruning_mask(self, weights, mask, layer_name, pruning_ratio):
         """Ranks weights by magnitude. Sets all below kth to 0.
@@ -44,7 +38,6 @@ class SparsePruner(object):
         # print('Layer {}, pruned {}/{} ({:.2f}%)'.format(
         #        layer_name, mask.eq(0).sum(), tensor.numel(),
         #        float(100 * mask.eq(0).sum()) / tensor.numel()))
-
         return mask
 
     def _adjust_sparsity(self, curr_prune_step):
@@ -57,7 +50,6 @@ class SparsePruner(object):
 
         sparsity = self.args.target_sparsity + \
             (self.args.initial_sparsity - self.args.target_sparsity) * pow(1-p, self.sparsity_func_exponent)
-
         return sparsity
 
     def _time_to_update_masks(self, curr_prune_step):
@@ -67,7 +59,6 @@ class SparsePruner(object):
 
         is_pruning_step = (
             self.last_prune_step + self.args.pruning_frequency) <= curr_prune_step
-
         return is_step_within_pruning_range and is_pruning_step
 
     def gradually_prune(self, curr_prune_step):
@@ -86,8 +77,6 @@ class SparsePruner(object):
                     module.weight.data[self.masks[name].eq(0)] = 0.0
         else:
             curr_pruning_ratio = self._adjust_sparsity(self.last_prune_step)
-
-
         return curr_pruning_ratio
 
     def one_shot_prune(self, one_shot_prune_perc):
@@ -107,7 +96,7 @@ class SparsePruner(object):
 
                 # Set pruned weights to 0.
                 module.weight.data[self.masks[name].eq(0)] = 0.0
-
+        return
 
     def calculate_sparsity(self):
         total_elem = 0
@@ -167,6 +156,7 @@ class SparsePruner(object):
                     module.weight.grad.data.add_(self.args.weight_decay, module.weight.data)
                     module.weight.grad.data[mask.ne(
                         self.current_dataset_idx)] = 0
+        return
 
     def make_pruned_zero(self):
         """Makes pruned weights 0."""
@@ -178,6 +168,7 @@ class SparsePruner(object):
                     continue
                 layer_mask = self.masks[name]
                 module.weight.data[layer_mask.eq(0)] = 0.0
+        return
 
     def apply_mask(self):
         """To be done to retrieve weights just for a particular dataset."""
@@ -189,6 +180,7 @@ class SparsePruner(object):
                 mask = self.masks[name].cuda()
                 weight[mask.eq(0)] = 0.0
                 weight[mask.gt(self.inference_dataset_idx)] = 0.0
+        return
 
     def make_finetuning_mask(self):
         """Turns previously pruned weights into trainable weights for
@@ -203,3 +195,4 @@ class SparsePruner(object):
                     continue
                 mask = self.masks[name]
                 mask[mask.eq(0)] = self.current_dataset_idx
+        return

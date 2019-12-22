@@ -1,6 +1,4 @@
 """Main entry point for doing all stuff."""
-from __future__ import division, print_function
-
 import argparse
 import json
 import warnings
@@ -12,24 +10,23 @@ import torch.backends.cudnn as cudnn
 from torch.nn.parameter import Parameter
 import torchvision.transforms as transforms
 
-import FACE_UTILS as utils
-import pdb
 import os
+import sys
+import pdb
 import math
 from tqdm import tqdm
-import sys
 import numpy as np
-from pprint import pprint
 
+import utils
+from utils import Optimizers
+from utils.packnet_manager import Manager
+from utils.LFWDataset import LFWDataset
+import utils.face_dataset as dataset
 import packnet_models
-from FACE_UTILS.packnet_manager import Manager
-import FACE_UTILS.dataset as dataset
-import torch.utils.model_zoo as model_zoo
-from FACE_UTILS.LFWDataset import LFWDataset
 
 
 #{{{ Arguments
-INIT_WEIGHT_PATH = 'common_data/face_weight.pth'
+INIT_WEIGHT_PATH = 'face_data/face_weight.pth'
 
 # To prevent PIL warnings.
 warnings.filterwarnings("ignore")

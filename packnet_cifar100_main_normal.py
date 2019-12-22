@@ -1,6 +1,4 @@
 """Main entry point for doing all stuff."""
-from __future__ import division, print_function
-
 import argparse
 import json
 import warnings
@@ -11,31 +9,20 @@ import torch.optim as optim
 import torch.backends.cudnn as cudnn
 from torch.nn.parameter import Parameter
 
-import UTILS.utils as utils
-import pdb
+import logging
 import os
+import pdb
 import math
 from tqdm import tqdm
 import sys
 import numpy as np
-from pprint import pprint
 
+import utils
+from utils import Optimizers
+from utils.packnet_manager import Manager
+import utils.cifar100_dataset as dataset
 import packnet_models
-from UTILS.packnet_manager import Manager
-import UTILS.dataset as dataset
-import torch.utils.model_zoo as model_zoo
-import logging
 
-model_urls = {
-    'vgg11': 'https://download.pytorch.org/models/vgg11-bbd30ac9.pth',
-    'vgg13': 'https://download.pytorch.org/models/vgg13-c768596a.pth',
-    'vgg16': 'https://download.pytorch.org/models/vgg16-397923af.pth',
-    'vgg19': 'https://download.pytorch.org/models/vgg19-dcbb9e9d.pth',
-    'vgg11_bn': 'https://download.pytorch.org/models/vgg11_bn-6002323d.pth',
-    'vgg13_bn': 'https://download.pytorch.org/models/vgg13_bn-abd245e5.pth',
-    'vgg16_bn': 'https://download.pytorch.org/models/vgg16_bn-6c64b313.pth',
-    'vgg19_bn': 'https://download.pytorch.org/models/vgg19_bn-c79401a0.pth',
-}
 
 # To prevent PIL warnings.
 warnings.filterwarnings("ignore")
@@ -45,6 +32,7 @@ parser.add_argument('--arch', type=str, default='vgg16_bn_cifar100',
                    help='Architectures')
 parser.add_argument('--num_classes', type=int, default=-1,
                    help='Num outputs for dataset')
+
 # Optimization options.
 parser.add_argument('--lr', type=float, default=0.1,
                    help='Learning rate for parameters, used for baselines')
@@ -56,6 +44,7 @@ parser.add_argument('--val_batch_size', type=int, default=100,
 parser.add_argument('--workers', type=int, default=24, help='')
 parser.add_argument('--weight_decay', type=float, default=4e-5,
                    help='Weight decay')
+
 # Paths.
 parser.add_argument('--dataset', type=str, default='',
                    help='Name of dataset')
@@ -63,28 +52,22 @@ parser.add_argument('--train_path', type=str, default='',
                    help='Location of train data')
 parser.add_argument('--val_path', type=str, default='',
                    help='Location of test data')
+
 # Other.
 parser.add_argument('--cuda', action='store_true', default=True,
                    help='use CUDA')
 
 parser.add_argument('--seed', type=int, default=1, help='random seed')
 
-parser.add_argument('--checkpoint_format', type=str, 
-    default='./{save_folder}/checkpoint-{epoch}.pth.tar',
-    help='checkpoint file format')
-
+parser.add_argument('--checkpoint_format', type=str,
+                    default='./{save_folder}/checkpoint-{epoch}.pth.tar',
+                    help='checkpoint file format')
 parser.add_argument('--epochs', type=int, default=160,
                     help='number of epochs to train')
 parser.add_argument('--restore_epoch', type=int, default=0, help='')
 parser.add_argument('--save_folder', type=str,
                     help='folder name inside one_check folder')
 parser.add_argument('--load_folder', default='', help='')
-
-# parser.add_argument('--datadir', default='/home/ivclab/decathlon-1.0/', 
-#                    help='folder containing data folder')
-# parser.add_argument('--imdbdir', default='/home/ivclab/decathlon-1.0/annotations', 
-#                    help='annotation folder')
-
 parser.add_argument('--one_shot_prune_perc', type=float, default=0.5,
                    help='% of neurons to prune per layer')
 parser.add_argument('--mode',
@@ -92,34 +75,11 @@ parser.add_argument('--mode',
                    help='Run mode')
 parser.add_argument('--logfile', type=str, help='file to save baseline accuracy')
 parser.add_argument('--initial_from_task', type=str, help="")
-class Optimizers(object):
-    def __init__(self):
-        self.optimizers = []
-        self.lrs = []
-        # self.args = args
 
-    def add(self, optimizer, lr):
-        self.optimizers.append(optimizer)
-        self.lrs.append(lr)
-
-    def step(self):
-        for optimizer in self.optimizers:
-            optimizer.step()
-
-    def zero_grad(self):
-        for optimizer in self.optimizers:
-            optimizer.zero_grad()
-
-    def __getitem__(self, index):
-        return self.optimizers[index]
-
-    def __setitem__(self, index, value):
-        self.optimizers[index] = value
 
 def main():
     """Do stuff."""
     args = parser.parse_args()
-    # args.batch_size = args.batch_size * torch.cuda.device_count()
     if args.save_folder and not os.path.isdir(args.save_folder):
         os.makedirs(args.save_folder)
 
@@ -147,7 +107,7 @@ def main():
 
     # Set default train and test path if not provided as input.
     utils.set_dataset_paths(args)
-                        
+
     if resume_from_epoch:
         filepath = args.checkpoint_format.format(save_folder=resume_folder, epoch=resume_from_epoch)
         checkpoint = torch.load(filepath)
@@ -175,8 +135,8 @@ def main():
     else:
         print('Error!')
         sys.exit(0)
-    
-    # Add and set the model dataset.
+
+    # Add and set the model dataset
     model.add_dataset(args.dataset, args.num_classes)
     model.set_dataset(args.dataset)
 
@@ -192,7 +152,6 @@ def main():
 
     model = nn.DataParallel(model)
     model = model.cuda()
-
     if args.initial_from_task and 'None' not in args.initial_from_task:
         filepath = ''
         for try_epoch in range(200, 0, -1):
@@ -226,24 +185,21 @@ def main():
                     mask = mask.cuda()
                 masks[name] = mask
 
-    if args.num_classes == 2:
-        train_loader = dataset.cifar100_train_loader_two_class(args.dataset, args.batch_size)
-        val_loader = dataset.cifar100_val_loader_two_class(args.dataset, args.val_batch_size)
-    elif args.num_classes == 5:
+    if args.num_classes == 5:
         train_loader = dataset.cifar100_train_loader(args.dataset, args.batch_size)
         val_loader = dataset.cifar100_val_loader(args.dataset, args.val_batch_size)
     else:
-        print("num_classes should be either 2 or 5")
+        print("num_classes should be 5")
         sys.exit(1)
-        
+
     # if we are going to save checkpoint in other folder, then we recalculate the starting epoch
     if args.save_folder != args.load_folder:
         start_epoch = 0
     else:
         start_epoch = resume_from_epoch
-    
+
     manager = Manager(args, model, shared_layer_info, masks, train_loader, val_loader)
-    
+
     if args.mode == 'inference':
         manager.load_checkpoint_for_inference(resume_from_epoch, resume_folder)
         manager.validate(resume_from_epoch-1)
@@ -261,17 +217,17 @@ def main():
         if 'classifiers' in tuple_[0]:
             if '.{}.'.format(model.module.datasets.index(args.dataset)) in tuple_[0]:
                 params_to_optimize_via_SGD.append(tuple_[1])
-                named_params_to_optimize_via_SGD.append(tuple_)                
+                named_params_to_optimize_via_SGD.append(tuple_)
             continue
         else:
             params_to_optimize_via_SGD.append(tuple_[1])
             named_params_to_optimize_via_SGD.append(tuple_)
 
-    # here we must set weight decay to 0.0, 
+    # here we must set weight decay to 0.0,
     # because the weight decay strategy in build-in step() function will change every weight elem in the tensor,
     # which will hurt previous tasks' accuracy. (Instead, we do weight decay ourself in the `prune.py`)
     optimizer_network = optim.SGD(params_to_optimize_via_SGD, lr=lr,
-                          weight_decay=0.0, momentum=0.9, nesterov=True)  
+                          weight_decay=0.0, momentum=0.9, nesterov=True)
 
     optimizers = Optimizers()
     optimizers.add(optimizer_network, lr)
@@ -284,7 +240,7 @@ def main():
         for param_group in optimizer.param_groups:
             curr_lrs.append(param_group['lr'])
             break
-    
+
     if args.mode == 'prune':
         print()
         print('Sparsity ratio: {}'.format(args.one_shot_prune_perc))
@@ -316,7 +272,7 @@ def main():
     #     paths = os.listdir(args.save_folder)
     #     if paths and '.pth.tar' in paths[0]:
     #         for checkpoint_file in paths:
-    #             os.remove(os.path.join(args.save_folder, checkpoint_file))                    
+    #             os.remove(os.path.join(args.save_folder, checkpoint_file))
         pass
     else:
         print('Something is wrong! Block the program with pdb')
@@ -346,5 +302,4 @@ def main():
     print('-' * 16)
 
 if __name__ == '__main__':
-  main()
-
+    main()

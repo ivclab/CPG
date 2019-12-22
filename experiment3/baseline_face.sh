@@ -25,9 +25,9 @@ NUM_CLASSES=(
       8
 )
 
-LRS=(
+INIT_LRS=(
       0.0                     # dummy
-      0.0
+      1e-3
       1e-3
       1e-4
       1e-3
@@ -49,11 +49,11 @@ for TASK_ID in `seq 2 8`; do
           --arch $ARCH \
           --dataset ${DATASETS[TASK_ID]} \
   		    --num_classes ${NUM_CLASSES[TASK_ID]} \
-          --lr ${LRS[TASK_ID]} \
+          --lr ${INIT_LRS[TASK_ID]} \
           --weight_decay 4e-5 \
   	      --batch_size 32 \
   	      --val_batch_size 1 \
-          --save_folder baseline_checkpoints/$ARCH/${DATASETS[TASK_ID]} \
+          --save_folder checkpoints/baseline/experiment3/$ARCH/${DATASETS[TASK_ID]} \
           --epochs $FINETUNE_EPOCHS \
           --mode finetune \
           --logfile logs/baseline_face_acc.txt \

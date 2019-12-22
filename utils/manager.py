@@ -1,41 +1,16 @@
 import logging
 import torch
 import torch.nn as nn
-import torch.optim as optim
 import torch.nn.functional as F
 import numpy as np
-from .prune import SparsePruner
 from tqdm import tqdm
 import pdb
-from pprint import pprint
-import os
-import math
-from datetime import datetime
-import models.layers as nl
-# import imdbfolder_coco as imdbfolder
-import sys
 from torch.autograd import Variable
+from . import Metric, classification_accuracy
+from .prune import SparsePruner
 from .metrics import fv_evaluate
+import models.layers as nl
 from models import AngleLoss
-
-class Metric(object):
-    def __init__(self, name):
-        self.name = name
-        self.sum = torch.tensor(0.)
-        self.n = torch.tensor(0.)
-
-    def update(self, val):
-        self.sum += val
-        self.n += 1
-
-    @property
-    def avg(self):
-        return self.sum / self.n
-
-def accuracy(output, target):
-    # get the index of the max log-probability
-    pred = output.max(1, keepdim=True)[1]
-    return pred.eq(target.view_as(pred)).cpu().float().mean()
 
 
 class Manager(object):
@@ -59,6 +34,7 @@ class Manager(object):
             self.criterion = nn.CrossEntropyLoss(weight=class_weights.cuda())
         else:
             self.criterion = nn.CrossEntropyLoss()
+        return
 
     def train(self, optimizers, epoch_idx, curr_lrs, curr_prune_step):
         # Set model to training mode
@@ -79,11 +55,12 @@ class Manager(object):
                 # Do forward-backward.
                 output = self.model(data)
 
+                num = data.size(0)
                 if self.args.dataset != 'face_verification':
-                    train_accuracy.update(accuracy(output, target))
+                    train_accuracy.update(classification_accuracy(output, target), num)
 
                 loss = self.criterion(output, target)
-                train_loss.update(loss)
+                train_loss.update(loss, num)
                 loss.backward()
 
                 # Set fixed param grads to 0.
@@ -116,8 +93,10 @@ class Manager(object):
                    'lr': curr_lrs[0],
                    'sparsity': '{:.3f}'.format(self.pruner.calculate_sparsity()),
                    'network_width_mpl': self.args.network_width_multiplier}
-        logging.info(('In train()-> Train Ep. #{} '.format(epoch_idx + 1)
-                     + ', '.join(['{}: {}'.format(k, v) for k, v in summary.items()])))
+
+        if self.args.log_path:
+            logging.info(('In train()-> Train Ep. #{} '.format(epoch_idx + 1)
+                         + ', '.join(['{}: {}'.format(k, v) for k, v in summary.items()])))
         return train_accuracy.avg.item(), curr_prune_step
 
     #{{{ Evaluate classification
@@ -129,7 +108,7 @@ class Manager(object):
         val_accuracy = Metric('val_accuracy')
 
         with tqdm(total=len(self.val_loader),
-                  desc='Val Ep. #{}: '.format(epoch_idx + 1), #, datetime.strftime(datetime.now(), '%Y/%m/%d-%H:%M:%S'))
+                  desc='Val Ep. #{}: '.format(epoch_idx + 1),
                   ascii=True) as t:
             with torch.no_grad():
                 for data, target in self.val_loader:
@@ -137,33 +116,39 @@ class Manager(object):
                         data, target = data.cuda(), target.cuda()
 
                     output = self.model(data)
-
-                    val_loss.update(self.criterion(output, target))
-                    val_accuracy.update(accuracy(output, target))
+                    num = data.size(0)
+                    val_loss.update(self.criterion(output, target), num)
+                    val_accuracy.update(classification_accuracy(output, target), num)
 
                     if self.inference_dataset_idx == 1:
                         t.set_postfix({'loss': val_loss.avg.item(),
                                        'accuracy': '{:.2f}'.format(100. * val_accuracy.avg.item()),
                                        'sparsity': self.pruner.calculate_sparsity(),
-                                       'task{} ratio'.format(self.inference_dataset_idx): '{:.2f}'.format(self.pruner.calculate_curr_task_ratio()),
-                                       'zero ratio': self.pruner.calculate_zero_ratio()})
+                                       'task{} ratio'.format(self.inference_dataset_idx): self.pruner.calculate_curr_task_ratio(),
+                                       'zero ratio': self.pruner.calculate_zero_ratio(),
+                                       'mpl': self.args.network_width_multiplier})
                     else:
                         t.set_postfix({'loss': val_loss.avg.item(),
                                        'accuracy': '{:.2f}'.format(100. * val_accuracy.avg.item()),
                                        'sparsity': self.pruner.calculate_sparsity(),
-                                       'task{} ratio'.format(self.inference_dataset_idx): '{:.2f}'.format(self.pruner.calculate_curr_task_ratio()),
+                                       'task{} ratio'.format(self.inference_dataset_idx): self.pruner.calculate_curr_task_ratio(),
                                        'shared_ratio': self.pruner.calculate_shared_part_ratio(),
-                                       'zero ratio': self.pruner.calculate_zero_ratio()})
+                                       'zero ratio': self.pruner.calculate_zero_ratio(),
+                                       'mpl': self.args.network_width_multiplier})
                     t.update(1)
+
         summary = {'loss': '{:.3f}'.format(val_loss.avg.item()),
                    'accuracy': '{:.2f}'.format(100. * val_accuracy.avg.item()),
                    'sparsity': '{:.3f}'.format(self.pruner.calculate_sparsity()),
                    'task{} ratio'.format(self.inference_dataset_idx): '{:.3f}'.format(self.pruner.calculate_curr_task_ratio()),
-                   'zero ratio': '{:.3f}'.format(self.pruner.calculate_zero_ratio())}
+                   'zero ratio': '{:.3f}'.format(self.pruner.calculate_zero_ratio()),
+                   'mpl': self.args.network_width_multiplier}
         if self.inference_dataset_idx != 1:
             summary['shared_ratio'] = '{:.3f}'.format(self.pruner.calculate_shared_part_ratio())
-        logging.info(('In validate()-> Val Ep. #{} '.format(epoch_idx + 1)
-                     + ', '.join(['{}: {}'.format(k, v) for k, v in summary.items()])))
+
+        if self.args.log_path:
+            logging.info(('In validate()-> Val Ep. #{} '.format(epoch_idx + 1)
+                         + ', '.join(['{}: {}'.format(k, v) for k, v in summary.items()])))
         return val_accuracy.avg.item()
     #}}}
 
@@ -243,16 +228,20 @@ class Manager(object):
             'shared_layer_info': self.shared_layer_info
         }
         torch.save(checkpoint, filepath)
+        return
 
-    def load_checkpoint(self, optimizers, resume_from_epoch, save_folder, restore_optimizers=True):
+    def load_checkpoint(self, optimizers, resume_from_epoch, save_folder):
+
         if resume_from_epoch > 0:
             filepath = self.args.checkpoint_format.format(save_folder=save_folder, epoch=resume_from_epoch)
             checkpoint = torch.load(filepath)
             checkpoint_keys = checkpoint.keys()
             state_dict = checkpoint['model_state_dict']
             curr_model_state_dict = self.model.module.state_dict()
+
             for name, param in state_dict.items():
-                if 'piggymask' in name or name == 'classifier.weight' or name == 'classifier.bias' or (name == 'classifier.0.weight' or name == 'classifier.0.bias' or name == 'classifier.1.weight'):
+                if ('piggymask' in name or name == 'classifier.weight' or name == 'classifier.bias' or
+                    (name == 'classifier.0.weight' or name == 'classifier.0.bias' or name == 'classifier.1.weight')):
                     # I DONT WANT TO DO THIS! QQ That last 3 exprs are for anglelinear and embeddings
                     continue
                 elif len(curr_model_state_dict[name].size()) == 4:
@@ -264,32 +253,48 @@ class Manager(object):
                 elif len(curr_model_state_dict[name].size()) == 1:
                     # bn and prelu layer
                     curr_model_state_dict[name][:param.size(0)].copy_(param)
+                elif 'classifiers' in name:
+                    curr_model_state_dict[name][:param.size(0), :param.size(1)].copy_(param)
                 else:
-                    curr_model_state_dict[name].copy_(param)
+                    try:
+                        curr_model_state_dict[name].copy_(param)
+                    except:
+                        pdb.set_trace()
+                        print("There is some corner case that we haven't tackled")
+        return
 
     def load_checkpoint_only_for_evaluate(self, resume_from_epoch, save_folder):
+
         if resume_from_epoch > 0:
             filepath = self.args.checkpoint_format.format(save_folder=save_folder, epoch=resume_from_epoch)
             checkpoint = torch.load(filepath)
             checkpoint_keys = checkpoint.keys()
             state_dict = checkpoint['model_state_dict']
-
             curr_model_state_dict = self.model.module.state_dict()
+
             for name, param in state_dict.items():
                 if 'piggymask' in name: # we load piggymask value in main.py
                     continue
-                if name == 'classifier.weight' or name == 'classifier.bias' or (name == 'classifier.0.weight' or name == 'classifier.0.bias' or name == 'classifier.1.weight'):
+
+                if (name == 'classifier.weight' or name == 'classifier.bias' or
+                    (name == 'classifier.0.weight' or name == 'classifier.0.bias' or name == 'classifier.1.weight')):
                      # I DONT WANT TO DO THIS! QQ That last 3 exprs are for anglelinear and embeddings
                     continue
+
                 elif len(curr_model_state_dict[name].size()) == 4:
                     # Conv layer
-                    curr_model_state_dict[name].copy_(param[:curr_model_state_dict[name].size(0), :curr_model_state_dict[name].size(1), :, :])
+                    curr_model_state_dict[name].copy_(
+                            param[:curr_model_state_dict[name].size(0), :curr_model_state_dict[name].size(1), :, :])
+
                 elif len(curr_model_state_dict[name].size()) == 2 and 'features' in name:
                     # FC conv (feature layer)
-                    curr_model_state_dict[name].copy_(param[:curr_model_state_dict[name].size(0), :curr_model_state_dict[name].size(1)])
+                    curr_model_state_dict[name].copy_(
+                            param[:curr_model_state_dict[name].size(0), :curr_model_state_dict[name].size(1)])
+
                 elif len(curr_model_state_dict[name].size()) == 1:
                     # bn and prelu layer
                     curr_model_state_dict[name].copy_(param[:curr_model_state_dict[name].size(0)])
+
                 else:
                     curr_model_state_dict[name].copy_(param)
 
@@ -298,6 +303,7 @@ class Manager(object):
                 if isinstance(module, nl.SharableConv2d) or isinstance(module, nl.SharableLinear):
                     if module.bias is not None:
                         module.bias = self.shared_layer_info[self.args.dataset]['bias'][name]
+
                 elif isinstance(module, nn.BatchNorm2d):
                     module.running_mean = self.shared_layer_info[self.args.dataset][
                         'bn_layer_running_mean'][name]
@@ -307,6 +313,8 @@ class Manager(object):
                         'bn_layer_weight'][name]
                     module.bias = self.shared_layer_info[self.args.dataset][
                         'bn_layer_bias'][name]
+
                 elif isinstance(module, nn.PReLU):
                     module.weight = self.shared_layer_info[self.args.dataset][
                         'prelu_layer_weight'][name]
+        return

@@ -1,18 +1,7 @@
-import collections
-import glob
-import os
-
-import numpy as np
-from PIL import Image
-
 import torch
-import torch.backends.cudnn as cudnn
-import torch.nn as nn
-import torch.optim as optim
 import torchvision.datasets as datasets
-import torchvision.models as models
 import torchvision.transforms as transforms
-import pdb
+
 
 VGGFACE_MEAN = [0.5, 0.5, 0.5]
 VGGFACE_STD  = [0.5, 0.5, 0.5]

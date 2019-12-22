@@ -22,134 +22,162 @@ Please cite following paper if these codes help your research:
 ---
 
 ## Experiment1 (Compact 20 tasks into VGG16 network)
-- Datasets: Cifar100. We splited 100 classes into 20 tasks. For each task, there are 5 new classes to learn.  
-            If you download [our splited Cifar100](https://drive.google.com/file/d/1eo2RhMmhxzUNOZa0Z7jy7y4lOn3lqddU/view?usp=sharing) and unzip it in the **datasets** folder, you can skip the following Step 1.
-#### Demo
 
-`Step 1. Download Cifar100 and organize the folders to Pytorch data loading format`
+** Step 1. ** Download CIFAR100 and form the 20 tasks based on their super classes with the [cifar2png](https://github.com/knjcode/cifar2png) tool. Or you can just download the converted version of our CIFAR100 from [here](https://drive.google.com/file/d/1eo2RhMmhxzUNOZa0Z7jy7y4lOn3lqddU/view?usp=sharing). Unzip the compressed file and place `cifar100_org/` in `data/`. 
 
-- use [cifar2png](https://github.com/knjcode/cifar2png) tool.
-```
-$ cifar2png cifar100superclass path/to/cifar100png
-```
-  
-`Step 2. Fill the dataset path into dataset.py`
-
-
-- In cifar100_train_loader function
-```
-    train_dataset = datasets.ImageFolder('path_to_train_folder/{}'.format(dataset_name),
-            train_transform)
-```
-- In cifar100_val_loader function 
-```
-val_dataset = \
-        datasets.ImageFolder('path_to_test_folder/{}'.format(
-                dataset_name),
-                transforms.Compose([
-                    transforms.ToTensor(),
-                    normalize,
-                ]))
-```
-
-`Step 3. Run baseline_cifar100.sh or finetune_cifar100_normal.sh in experiement1 folder`
- 
-There are one important arg in baseline_cifar100.sh or finetune_cifar100_normal.sh:
-- logfile: it is used to save baseline accuracy of current task to json file.
+** Step 2. ** Use the following command to train individual models for each of the 20 tasks so that we can obtain their accuracy goals. 
 
 ```
-$ bash experiment1/baseline_cifar100.sh
-```
-or
-```
-$ bash experiment1/finetune_cifar100_normal.sh
+$ bash experiement1/baseline_cifar100.sh 
 ```
 
-After this step, we will get the accuracy goal for each task in the json file we specify.
+If you would like to use higher accuracy goals, execute `experiment1/finetune_cifar100.sh` instead. The script randomly selects a model trained on previous tasks and finetunes it to the current one. After this step, we obtain `logs/baseline_cifar100_acc.txt` that contains accuracy goals for 20 tasks. 
 
-`Step 4. Run CPG algorithm to learn 20 tasks in sequential`
-- args:
-  - baseline_cifar100_acc: it must be the same path as logfile in baesline_cifar100.sh, used to                          load the accuracy goal for CPG algorithm to chase. 
+
+** Step 3. ** Run CPG to learn 20 tasks sequentially.
+
 ```
-$ bash experiment1/CPG_cifar100_scratch_mul_1.5.sh
+$ bash experiment1/CPG_cifar100_scratch_1.5.sh 
 ```
 
-`Step 5. Inference`
+If you use another accuracy goals, please modify the `baseline_cifar100_acc` variable in `experiment1/CPG_cifar100_scratch_1.5.sh` to the path containing your accuracy goals. 
+
+
+** Step 4. ** Inference the learned 20 tasks. 
+
 ```
-$ bash experiment1/inference_CPG_cifar100_result.sh
+$ bash experiment1/inference_CPG_cifar100.sh
 ```
 
 
-### CPG-VGG16 [Checkpoints](https://drive.google.com/open?id=1Zc4MJGPMcWSUkxw2j2Zy7s18jDUALkwc) on CIFAR-100 Twenty Tasks.
-`unzip "experiment1_ckeckpoints.zip" in the "checkpoints" folder.`
+### CPG-VGG16 [Checkpoints](https://drive.google.com/open?id=1pcbazW4onWWSxWjZCG6fngB3ixX2Mv9a) on CIFAR-100 Twenty Tasks.
+
+Extract the downloaded .zip file and place `all_max_mul_1.5/` in `checkpoints/CPG/experiment1/`. Modify the `SETTING` variable in `experiment1/inference_CPG_cifar100.sh` to `all_max_mul_1.5` before inference. 
+
 
 | Task |   1  |   2  |   3  |   4  |   5  |   6  |   7  |   8  |   9  |  10  |  11  |  12  |  13  |  14  |  15  |  16  |  17  |  18  |  19  |  20  |
 |------|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|
-| Acc. | 67.0 | 78.2 | 77.0 | 79.4 | 85.0 | 83.8 | 80.0 | 82.8 | 81.6 | 87.6 | 86.8 | 82.6 | 87.6 | 81.4 | 51.8 | 71.2 | 69.4 | 70.2 | 86.6 | 92.0 |
+| Acc. | 66.6 | 77.2 | 78.6 | 83.2 | 88.2 | 85.8 | 82.4 | 85.4 | 87.6 | 90.8 | 91.0 | 84.6 | 89.2 | 83.0 | 56.2 | 75.4 | 71.0 | 73.8 | 90.6 | 93.6 |
+
+
+
 ---
 
-## Experiment2 (Compact 6 tasks into VGG16/ResNet50 network)  
-- Datasets: We provide [the 5 tasks datasets](https://drive.google.com/file/d/1a-FiCtYO_7nRcI9eIHrlZysq_0N3Sh2P/view?usp=sharing), including cubs_cropped,  stanford_cars_cropped, flowers, wikiart, and sketches. (**without ImageNet**).  
-  If you download the datasets above and unzip them in the **datasets** folder, you can skip the following Step 1. 
+## Experiment2 (Compact 6 fine-grained image tasks into ResNet50 network)  
 
-`Step 1. Download multiple datasets`
 
-- refer to [piggyback](https://github.com/arunmallya/piggyback)
+** Step 1. ** We provide the datasets of 5 tasks, including *cubs_cropped*, *stanford_cars_cropped*, *flowers*, *wikiart* and *sketches* (without *imagenet*), and they can be downloaded [here](https://drive.google.com/file/d/1a-FiCtYO_7nRcI9eIHrlZysq_0N3Sh2P/view?usp=sharing). After downloading, place the extracted directories in `data/`. If you would like to construct datasets yourself, please refer to [piggyback](https://github.com/arunmallya/piggyback). 
 
-`Step 2. Adjust set_dataset_paths function in utils.py`
 
-`Step 3. Manually write each task's accuracy goal into json file`
+** Step 2. ** Similar to Experiment1, we need to construct the accuracy goals for the 6 tasks. With the following command, we finetune the model pretrained on ImageNet to the other 5 tasks and produce accuracy goals stored in `logs/baseline_imagenet_acc_resnet50.txt`. 
 
-### For example, for VGG16, I will create logs/baseline_imagenet_acc_custom_vgg.txt
-, and write accuracy goal according to [piggyback](https://arxiv.org/pdf/1801.06519.pdf) paper. 
 ```
-{"imagenet": "0.7336", "cubs_cropped": "0.8023", "stanford_cars_cropped": "0.9059", "flowers": "0.9545", "wikiart": "0.7332", "sketches": "0.7808"}
+$ bash experiment2/baseline_imagenet.sh
 ```
 
-`Step 4. Run CPG_imagenet_vgg.sh each time for each task and manually choose the best pruning ratio`
+Or we can simply use the results of individual ResNet50 networks reported in the [piggyback paper](https://arxiv.org/pdf/1801.06519.pdf) as follows. 
 
-For example, I will first gradually prune the first task (ImageNet) by setting 
-
-line 49,
 ```
-In CPG_imagenet_vgg.sh
-
-line 49: for task_id in `seq 1 1`; do
+{"imagenet": "0.7616", "cubs_cropped": "0.8283", "stanford_cars_cropped": "0.9183", "flowers": "0.9656", "wikiart": "0.7560", "sketches": "0.8078"}
 ```
 
-- Note: For first task (ImageNet), I set GPU_ID=0,1,2,3,4,5,6,7, in order to use 8 GPUs to accelerate pruning procedure. But for other task, I still use 1 gpu to avoid the loss of accuracy.
+** Step 3. ** Run CPG and choose the desired pruning ratio for each of the 6 tasks.
 
-After gradually pruning, I will check the record.txt file in the checkpoint path,
-in my case, it is ```checkpoints/CPG/custom_vgg/imagenet/gradual_prune/record.txt```
-and copy the checkpoint file from appropriate pruning ratio folder to gradual_prune folder.
-
-#### for example, original there will be folders named 0.1, 0.2, 0.3 ... 0.95 in checkpoint/CPG/custom_vgg/imagenet/gradual_prune/ folder, and according to the record.txt inside it, I fould that 0.4 is the best pruning ratio (It might be true, if 0.4 has the checkpoint which accuracy > 73.36, but 0.5 has the checkpoint which accuracy < 73.36)
-
-Thus, I copied the checkpoint from 0.4 folder to its upper folder
 ```
-In checkpoint/CPG/custom_vgg/imagenet/gradual_prune/
+$ bash experiment2/CPG_imagenet.sh 
+```
+
+We use the above command to run CPG for the task specified by the `TARGET_TASK_ID` varaiable in `experiment2/CPG_imagenet.sh`. 
+
+For example, start from *imagenet* (specified by `TARGET_TASK_ID=1`), we run the above command and then select the gradually pruned model to proceed to learn the next task. 
+
+More specifically, we check the `record.txt` in the checkpoint path, like `checkpoints/CPG/experiment2/resnet50/imagenet/gradual_prune/record.txt`, and find that there are 0.1, 0.2, 0.3, ... , 0.95 pruning ratios with their corresponding accuracies. We select the appropriate pruning ratio whose accuracy is higher than (or at least close to) the *imagenet*'s accuracy goal. Supposed that 0.4 is the best pruning ratio, we copy the corresponding checkpoint to `gradual_prune/` as below. 
+
+```
+In checkpoint/CPG/resnet50/imagenet/gradual_prune/
 
 $ cp 0.4/checkpoint-46.pth.tar ./checkpoint-46.pth.tar
+
 ```
 
-Now it's time to add second task by change line 49 in CPG_imagenet_vgg.sh
-line 49,
-```
-In CPG_imagenet_vgg.sh
+At last, we modify `TARGET_TASK_ID` to 2 and execute `experiment2/CPG_imagenet.sh` again so that CPG proceeds to learn the next task. 
 
-line 49: for task_id in `seq 2 2`; do
-```
-Then we repeat the check procedure to the second task, we check ```checkpoints/CPG/custom_vgg/cubs_cropped/gradual_prune/record.txt``` and copy the appropriate checkpoint with best pruning ratio to the upper folder, and again to the third, fourth tasks, ...  
+We repeat ** Step 3. ** to sequentially learn the 6 tasks. 
 
-### CPG-ResNet50 [Checkpoints](https://drive.google.com/file/d/1oYTQkNPo8JJ7lqKUKrAcu0T3ZAwe7C6r/view?usp=sharing) on Fine-grained Dataset.
-`unzip "experiment2_ResNet50_ckeckpoints.zip" in the "checkpoints" folder.`
+
+** Step 4. ** Inference the learned 6 tasks. 
+
+```
+$ bash experiment2/inference_CPG_imagenet.sh
+```
+
+
+### CPG-ResNet50 [Checkpoints](https://drive.google.com/open?id=1wTy-QrtD7wzAs55WnQBFoUzY4ruYocGY) on Fine-grained Dataset.
+
+Extract the downloaded .zip file and place `resnet50/` in `checkpoints/CPG/experiment2/`. 
+
 
 | Task | ImageNet |  CUBS | Stanford Cars | Flowers | Wikiart | Sketch |
 |:----:|:--------:|:-----:|:-------------:|:-------:|:-------:|:------:|
-| Acc. |   75.81  | 83.59 |     92.80     |  96.62  |  77.15  |  80.33 |
+| Acc. |   75.81  | 83.57 |     92.81     |  96.55  |  76.98  |  80.33 |
+
+---
+
+## Experiment3 (Compact 4 facial-informatic tasks into CNN20 network)
+
+** Step 1. ** We provide the datasets of 3 tasks, including *emotion*, *gender* and *age* (without *face_verification*). For the *age* task, we adopt the 5-fold scenario and thus have *age0*, *age1*, ... , *age4* which correspond to the five splits. All face images are aligned using [MTCNN](https://arxiv.org/ftp/arxiv/papers/1604/1604.02878.pdf) with output size of 112 x 112. The converted datasets can be downloaded [here](https://drive.google.com/open?id=1F2jx7k15EWA1P64Bp462ovB4zHb50tz_). 
 
 
-## Experiment3 
+** Step 2. ** Similarly, we need accuracy goals of the 4 tasks for CPG. We train CNN20 on VGGFace2 for the *face verification* task and finetune it to *emotion*, *gender* and *age* tasks. This [link](https://drive.google.com/open?id=1P3KiJGdanBbTpSFeLtbQCXIyoYrW8LtN) provides our *face verification* CNN20 pretrained weights (named `face_weight.pth`), and the following command finetunes the model to other 3 tasks. To evaluate the *face verification* task, we also need `lfw_pairs.txt` which can be downloaded [here](https://drive.google.com/open?id=1wuKxHrDXebWicDxqt6FpBMhMbdN6wEDf). Download `face_weight.pth` and `lfw_pairs.txt` use the links and place them in `face_data/`.
+
+```
+$ bash experiment3/baseline_face.sh 
+```
+
+The finetuning results are used as accuracy goals and stored in `logs/baseline_face_acc.txt`. You can also simply use the results as follows which corresponds to the finetuning results reported in our paper. 
+
+```
+{"face_verification": "0.9942", "gender": "0.9080", "emotion": "0.6254", "chalearn_gender": "0.9128", "age0": "0.6531", "age1": "0.5381", "age2": "0.5847", "age3": "0.5151", "age4": "0.5727"}
+```
+
+** Step 3. ** Similar to Experiment2, we add tasks sequentially by iteratively runing the following command and copy the pruned models with appropriate pruning ratios. 
+
+```
+$ bash experiment3/FvGeEm_CPG_face.sh 
+```
+
+Note that this script is only for learning the first 3 tasks, *face verification*, *gender* and *emotion*, by modifiying the `TARGET_TASK_ID` variable in it. Because we have 5 folds for the *age* task, use `experiment3/FvGeEmAg0_CPG_face.sh` for *age0*, `experiment3/FvGeEmAg1_CPG_face.sh` for *age1*, and so on. 
+
+We repeat ** Step 3. ** until all 4 tasks, including 5 folds of the age task, are sequentially learned. 
+
+
+** Step 4. ** Inference the learned 4 tasks. 
+
+```
+$ bash experiment3/inference_FvGeEmAg.sh ${GPU_ID} ${TARGET_SPARSITY} ${AGEFOLD} ${LOG_PATH}
+```
+
+The inference script takes 4 arguments listed as follows: 
+* GPU_ID: Index of GPU used to run the inference
+* TARGET_SPARSITY: The target pruning ratio of the age task model to inference (like 0,1, 0.2, ..., 0.9, 0.95)
+* AGEFOLD: The target fold of the 5 age folds to inference (like age0, age1, ..., age4)
+* LOG_PATH: The target path to output inference log
+
+For an example of using this script, please see `experiment3/inference_checkpoints_FvGeEmAg.sh`. 
+
+
+
+### CPG-CNN20 [Checkpoints](https://drive.google.com/open?id=1TYcmaWm1kwkj4v-Zy43XuREyYOPIbghJ) on Facial-informatic Dataset.
+
+Extract the downloaded .zip file, place `spherenet20/` in `checkpoints/CPG/experiment3/` and use the following command for inference with the checkpoints. 
+
+```
+$ bash experiment3/inference_checkpoints_FvGeEmAg.sh 
+```
+
+| Task | Face verification |  Gender | Expression | Mean of 5-fold Age |
+|:----:|:-----------------:|:-------:|:----------:|:------------------:|
+| Acc. |  99.300 +- 0.348  |  89.66  |    63.57   |        57.66       |
 
 
 ---
@@ -176,3 +204,11 @@ Then we repeat the check procedure to the second task, we check ```checkpoints/C
 |       [PackNet](https://github.com/arunmallya/packnet)      |   75.71  | 80.41 |     86.11     |  93.04  |  69.40  |  76.17 |       115       |
 |      [Piggyback](https://github.com/arunmallya/piggyback)     |   76.16  | 84.59 |     89.62     |  94.77  |  71.33  |  79.91 |       121       |
 |         **CPG**        |   75.81  | 83.59 |     92.80     |  96.62  |  77.15  |  80.33 |       121       |
+
+### Facial-informatic 4 Tasks (datasets as experiment3 above) - CNN20 
+
+|       Methods      |      Face     |  Gender | Expression |  Age  |
+|:------------------:|:-------------:|:-------:|:----------:|:-----:|
+| Train from Scratch | 99.417+-0.367 |  83.70  |    57.64   | 46.14 | 
+|      Finetune      |       -       |  90.80  |    62.54   | 57.27 | 
+|      **CPG**       | 99.300+-0.348 |  89.66  |    63.57   | 57.66 | 

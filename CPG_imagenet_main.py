@@ -1,6 +1,4 @@
 """Main entry point for doing all stuff."""
-from __future__ import division, print_function
-
 import argparse
 import json
 import warnings
@@ -10,22 +8,24 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.backends.cudnn as cudnn
 from torch.nn.parameter import Parameter
+import torch.utils.model_zoo as model_zoo
 
-import UTILS.utils as utils
-import pdb
+import logging
 import os
+import sys
+import pdb
 import math
 from tqdm import tqdm
-import sys
 import numpy as np
-from pprint import pprint
 
-import models.layers as nl
+import utils
+from utils import Optimizers, set_logger
+from utils.manager import Manager
+import utils.fine_grained_dataset as dataset
 import models
-from UTILS.manager import Manager
-import UTILS.dataset as dataset
-import torch.utils.model_zoo as model_zoo
-import logging
+import models.layers as nl
+
+
 model_urls = {
     'vgg11': 'https://download.pytorch.org/models/vgg11-bbd30ac9.pth',
     'vgg13': 'https://download.pytorch.org/models/vgg13-c768596a.pth',
@@ -39,7 +39,7 @@ model_urls = {
     'resnet34': 'https://download.pytorch.org/models/resnet34-333f7ec4.pth',
     'resnet50': 'https://download.pytorch.org/models/resnet50-19c8e357.pth',
     'resnet101': 'https://download.pytorch.org/models/resnet101-5d3b4d8f.pth',
-    'resnet152': 'https://download.pytorch.org/models/resnet152-b121ed2d.pth',    
+    'resnet152': 'https://download.pytorch.org/models/resnet152-b121ed2d.pth',
 }
 
 # To prevent PIL warnings.
@@ -50,6 +50,7 @@ parser.add_argument('--arch', type=str, default='resnet50',
                    help='Architectures')
 parser.add_argument('--num_classes', type=int, default=-1,
                    help='Num outputs for dataset')
+
 # Optimization options.
 parser.add_argument('--lr', type=float, default=0.1,
                    help='Learning rate for parameters, used for baselines')
@@ -57,12 +58,6 @@ parser.add_argument('--lr_mask', type=float, default=1e-4,
                    help='Learning rate for mask')
 parser.add_argument('--lr_mask_decay_every', type=int,
                    help='Step decay every this many epochs')
-
-# parser.add_argument('--lr_classifier', type=float,
-#                    help='Learning rate for classifier')
-# parser.add_argument('--lr_classifier_decay_every', type=int,
-#                    help='Step decay every this many epochs')
-
 parser.add_argument('--batch_size', type=int, default=32,
                    help='input batch size for training')
 parser.add_argument('--val_batch_size', type=int, default=100,
@@ -70,6 +65,7 @@ parser.add_argument('--val_batch_size', type=int, default=100,
 parser.add_argument('--workers', type=int, default=24, help='')
 parser.add_argument('--weight_decay', type=float, default=0.0,
                    help='Weight decay')
+
 # Masking options.
 parser.add_argument('--mask_init', default='1s',
                    choices=['1s', 'uniform', 'weight_based_1s'],
@@ -83,6 +79,7 @@ parser.add_argument('--threshold_fn',
                    choices=['binarizer', 'ternarizer'],
                    help='Type of thresholding function')
 parser.add_argument('--threshold', type=float, default=2e-3, help='')
+
 # Paths.
 parser.add_argument('--dataset', type=str, default='',
                    help='Name of dataset')
@@ -92,18 +89,14 @@ parser.add_argument('--val_path', type=str, default='',
                    help='Location of test data')
 parser.add_argument('--save_prefix', type=str, default='checkpoints/',
                    help='Location to save model')
+
 # Other.
 parser.add_argument('--cuda', action='store_true', default=True,
                    help='use CUDA')
-# parser.add_argument('--no_mask', action='store_true', default=False,
-#                    help='Used for running baselines, does not use any masking')
-
 parser.add_argument('--seed', type=int, default=1, help='random seed')
-
-parser.add_argument('--checkpoint_format', type=str, 
-    default='./{save_folder}/checkpoint-{epoch}.pth.tar',
-    help='checkpoint file format')
-
+parser.add_argument('--checkpoint_format', type=str,
+                    default='./{save_folder}/checkpoint-{epoch}.pth.tar',
+                    help='checkpoint file format')
 parser.add_argument('--epochs', type=int, default=160,
                     help='number of epochs to train')
 parser.add_argument('--restore_epoch', type=int, default=0, help='')
@@ -111,25 +104,13 @@ parser.add_argument('--image_size', type=int, default=32, help='')
 parser.add_argument('--save_folder', type=str,
                     help='folder name inside one_check folder')
 parser.add_argument('--load_folder', default='', help='')
-
-# parser.add_argument('--datadir', default='/home/ivclab/decathlon-1.0/', 
-#                    help='folder containing data folder')
-# parser.add_argument('--imdbdir', default='/home/ivclab/decathlon-1.0/annotations', 
-#                    help='annotation folder')
-
-# parser.add_argument('--train_weight', action='store_true', default=False, help='')
-# parser.add_argument('--train_mask', action='store_true', default=False, help='')
-# parser.add_argument('--train_classifier', action='store_true', default=False, help='')
-
 parser.add_argument('--pruning_interval', type=int, default=100, help='')
 parser.add_argument('--pruning_frequency', type=int, default=10, help='')
 parser.add_argument('--initial_sparsity', type=float, default=0.0, help='')
 parser.add_argument('--target_sparsity', type=float, default=0.1, help='')
-
 parser.add_argument('--mode',
-                   choices=['finetune', 'prune', 'inference'],
-                   help='Run mode')
-
+                    choices=['finetune', 'prune', 'inference'],
+                    help='Run mode')
 parser.add_argument('--jsonfile', type=str, help='file to restore baseline validation accuracy')
 parser.add_argument('--network_width_multiplier', type=float, default=1.0, help='the multiplier to scale up the channel width')
 parser.add_argument('--use_imagenet_pretrained', action='store_true', default=False,
@@ -139,53 +120,12 @@ parser.add_argument('--progressive_init', action='store_true', default=False, he
 parser.add_argument('--finetune_again', action='store_true', default=False, help='')
 parser.add_argument('--pruning_ratio_to_acc_record_file', type=str, help='')
 parser.add_argument('--log_path', type=str, help='')
-class Optimizers(object):
-    def __init__(self):
-        self.optimizers = []
-        self.lrs = []
-        # self.args = args
 
-    def add(self, optimizer, lr):
-        self.optimizers.append(optimizer)
-        self.lrs.append(lr)
-
-    def step(self):
-        for optimizer in self.optimizers:
-            # if isinstance(optimizer, torch.optim.Adam):
-                # pdb.set_trace()
-            optimizer.step()
-
-    def zero_grad(self):
-        for optimizer in self.optimizers:
-            optimizer.zero_grad()
-
-    def __getitem__(self, index):
-        return self.optimizers[index]
-
-    def __setitem__(self, index, value):
-        self.optimizers[index] = value
-
-def set_logger(filepath):
-    global logger
-    logger = logging.getLogger('')
-    logger.setLevel(logging.INFO)
-    fh = logging.FileHandler(filepath)
-    fh.setLevel(logging.INFO)
-    ch = logging.StreamHandler(sys.stdout)
-    ch.setLevel(logging.INFO)
-
-    _format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    fh.setFormatter(_format)
-    ch.setFormatter(_format)
-
-    logger.addHandler(fh)
-    logger.addHandler(ch)
-    return
 
 def main():
     """Do stuff."""
     args = parser.parse_args()
-    
+
     # args.batch_size = args.batch_size * torch.cuda.device_count()
     args.network_width_multiplier = math.sqrt(args.network_width_multiplier)
 
@@ -227,7 +167,7 @@ def main():
 
     # Set default train and test path if not provided as input.
     utils.set_dataset_paths(args)
-                        
+
     if resume_from_epoch:
         filepath = args.checkpoint_format.format(save_folder=resume_folder, epoch=resume_from_epoch)
         checkpoint = torch.load(filepath)
@@ -248,11 +188,11 @@ def main():
 
     if args.arch == 'resnet50':
         # num_for_construct = [64, 64, 64*4, 128, 128*4, 256, 256*4, 512, 512*4]
-        model = models.__dict__[args.arch](dataset_history=dataset_history, dataset2num_classes=dataset2num_classes, 
+        model = models.__dict__[args.arch](dataset_history=dataset_history, dataset2num_classes=dataset2num_classes,
             network_width_multiplier=args.network_width_multiplier, shared_layer_info=shared_layer_info)
     elif 'vgg' in args.arch:
         custom_cfg = [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512, 'M', 512, 512, 512, 'M']
-        model = models.__dict__[args.arch](custom_cfg, dataset_history=dataset_history, dataset2num_classes=dataset2num_classes, 
+        model = models.__dict__[args.arch](custom_cfg, dataset_history=dataset_history, dataset2num_classes=dataset2num_classes,
             network_width_multiplier=args.network_width_multiplier, shared_layer_info=shared_layer_info, progressive_init=args.progressive_init)
     else:
         print('Error!')
@@ -266,7 +206,7 @@ def main():
     model = nn.DataParallel(model)
     model = model.cuda()
 
-    # For datasets whose image_size is 224 and also the first task  
+    # For datasets whose image_size is 224 and also the first task
     if args.use_imagenet_pretrained and model.module.datasets.index(args.dataset) == 0:
         curr_model_state_dict = model.state_dict()
         if args.arch == 'custom_vgg':
@@ -296,7 +236,7 @@ def main():
     if not masks:
         for name, module in model.named_modules():
             if isinstance(module, nl.SharableConv2d) or isinstance(module, nl.SharableLinear):
-                mask = torch.ByteTensor(module.weight.data.size()).fill_(0)    
+                mask = torch.ByteTensor(module.weight.data.size()).fill_(0)
                 mask = mask.cuda()
                 masks[name] = mask
     else:
@@ -310,7 +250,7 @@ def main():
                 elif masks[name].size(1) > module.weight.data.size(1):
                     assert args.mode == 'inference'
                     NEED_ADJUST_MASK = True
-                
+
 
         if NEED_ADJUST_MASK:
             if args.mode == 'finetune':
@@ -321,11 +261,11 @@ def main():
                         mask[:masks[name].size(0), :masks[name].size(1), :, :].copy_(masks[name])
                         masks[name] = mask
                     elif isinstance(module, nl.SharableLinear):
-                        mask = torch.ByteTensor(module.weight.data.size()).fill_(0)                
+                        mask = torch.ByteTensor(module.weight.data.size()).fill_(0)
                         mask = mask.cuda()
                         mask[:masks[name].size(0), :masks[name].size(1)].copy_(masks[name])
                         masks[name] = mask
-            elif args.mode == 'inference':            
+            elif args.mode == 'inference':
                 for name, module in model.named_modules():
                     if isinstance(module, nl.SharableConv2d):
                         mask = torch.ByteTensor(module.weight.data.size()).fill_(0)
@@ -357,7 +297,7 @@ def main():
                     piggymasks[name] = torch.zeros_like(masks['module.' + name], dtype=torch.float32)
                     piggymasks[name].fill_(0.01)
                     piggymasks[name] = Parameter(piggymasks[name])
-                    module.piggymask = piggymasks[name]        
+                    module.piggymask = piggymasks[name]
     else:
         piggymasks = shared_layer_info[args.dataset]['piggymask']
         task_id = model.module.datasets.index(args.dataset) + 1
@@ -367,7 +307,7 @@ def main():
                     module.piggymask = piggymasks[name]
 
     shared_layer_info[args.dataset]['network_width_multiplier'] = args.network_width_multiplier
-    
+
     if 'cropped' in args.dataset:
         train_loader = dataset.train_loader_cropped(args.train_path, args.batch_size)
         val_loader = dataset.val_loader_cropped(args.val_path, args.val_batch_size)
@@ -404,7 +344,7 @@ def main():
         if 'classifiers' in name:
             if '.{}.'.format(model.module.datasets.index(args.dataset)) in name:
                 params_to_optimize_via_SGD.append(param)
-                named_of_params_to_optimize_via_SGD.append(name)                
+                named_of_params_to_optimize_via_SGD.append(name)
             continue
         elif 'piggymask' in name:
             masks_to_optimize_via_Adam.append(param)
@@ -424,27 +364,6 @@ def main():
 
     manager.load_checkpoint(optimizers, resume_from_epoch, resume_folder)
 
-    # total_elements = 0
-    # total_zeros_elements = 0
-    # for name, module in model.named_modules():
-    #     if isinstance(module, nl.SharableConv2d):
-    #         zero_channels = module.piggymask.le(args.threshold).sum()
-    #         zero_elements = module.weight.data.numel()/module.piggymask.size(0)*zero_channels
-    #         total_zeros_elements += zero_elements
-    #         total_elements += module.weight.data.numel()
-    #         print('{}: channel level: num_zeros {}, total {}; '
-    #                   'element level: num_zeros {}, total {}'.format(
-    #                     name, zero_channels, module.piggymask.size(0),
-    #                           zero_elements, module.weight.data.numel()))
-
-    #         # zero_elements = module.piggymask.le(args.threshold).sum()
-    #         # total_zeros_elements += zero_elements
-    #         # total_elements += module.weight.data.numel()
-    #         # print('{}: element level: num_zeros {}, total {}'.format(
-    #         #             name, zero_elements, module.piggymask.numel()))
-    # print('pruning ratio: {}'.format(float(total_zeros_elements)/total_elements))
-    # pdb.set_trace()
-
     """Performs training."""
     curr_lrs = []
     for optimizer in optimizers:
@@ -454,10 +373,10 @@ def main():
 
     if args.jsonfile is None or not os.path.isfile(args.jsonfile):
         sys.exit(3)
-    with open(args.jsonfile, 'r') as jsonfile: 
+    with open(args.jsonfile, 'r') as jsonfile:
         json_data = json.load(jsonfile)
         baseline_acc = float(json_data[args.dataset])
-    
+
     if args.mode == 'prune':
         if args.dataset != 'imagenet':
             history_best_avg_val_acc_when_prune = 0.0
@@ -476,7 +395,7 @@ def main():
         stop_prune = True
 
         if 'gradual_prune' in args.load_folder and args.save_folder == args.load_folder:
-            if args.dataset == 'imagenet': 
+            if args.dataset == 'imagenet':
                 args.epochs = 10 + resume_from_epoch
             else:
                 args.epochs = 20 + resume_from_epoch
@@ -513,11 +432,11 @@ def main():
                         os.remove(os.path.join(args.save_folder, checkpoint_file))
             else:
                 print('Something is wrong! Block the program with pdb')
-                pdb.set_trace()                
+                pdb.set_trace()
 
             manager.save_checkpoint(optimizers, epoch_idx, args.save_folder)
 
-        if args.mode == 'finetune':        
+        if args.mode == 'finetune':
 
             if avg_val_acc > history_best_avg_val_acc:
                 num_epochs_that_criterion_does_not_get_better = 0
@@ -528,7 +447,7 @@ def main():
                             os.remove(os.path.join(args.save_folder, checkpoint_file))
                 else:
                     print('Something is wrong! Block the program with pdb')
-                    pdb.set_trace()                
+                    pdb.set_trace()
 
                 history_best_avg_val_acc = avg_val_acc
                 manager.save_checkpoint(optimizers, epoch_idx, args.save_folder)
@@ -598,5 +517,4 @@ def main():
 
 
 if __name__ == '__main__':
-  main()
-
+    main()

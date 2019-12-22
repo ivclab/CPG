@@ -2,7 +2,7 @@
 # Normally, bash shell cannot support floating point arthematic, thus, here we use `bc` package
 
 PREFIX=FvGeEm
-TARGET_TASK_ID=0
+TARGET_TASK_ID=1
 
 dataset=(
       'None'                # dummy
@@ -68,8 +68,8 @@ for task_id in `seq $TARGET_TASK_ID $TARGET_TASK_ID`; do
                 --lr ${init_lr[task_id]} \
                 --lr_mask 5e-4 \
                 --weight_decay 4e-5 \
-                --save_folder ${PREFIX}_checkpoints/CPG/$arch/${dataset[task_id]}/scratch \
-                --load_folder ${PREFIX}_checkpoints/CPG/$arch/${dataset[task_id-1]}/gradual_prune/${finetune_start_sparsity[task_id]} \
+                --save_folder checkpoints/CPG/experiment3/$arch/${dataset[task_id]}/scratch \
+                --load_folder checkpoints/CPG/experiment3/$arch/${dataset[task_id-1]}/gradual_prune/${finetune_start_sparsity[task_id]} \
                 --epochs $finetune_epochs \
                 --mode finetune \
                 --batch_size ${batch_size[task_id]} \
@@ -77,24 +77,25 @@ for task_id in `seq $TARGET_TASK_ID $TARGET_TASK_ID`; do
                 --acc_margin ${acc_margin[task_id]} \
                 --network_width_multiplier $network_width_multiplier \
                 --jsonfile logs/baseline_face_acc.txt \
-                --log_path ${PREFIX}_checkpoints/CPG/$arch/run.log
+                --log_path checkpoints/CPG/experiment3/$arch/run.log
         else
-            CUDA_VISIBLE_DEVICES=$GPU_ID python CPG_face_main.py \
-                --arch $arch \
-                --dataset ${dataset[task_id]} --num_classes ${num_classes[task_id]} \
-                --lr ${init_lr[task_id]} \
-                --lr_mask 5e-4 \
-                --weight_decay 4e-5 \
-                --save_folder ${PREFIX}_checkpoints/CPG/$arch/${dataset[task_id]}/scratch \
-                --epochs $finetune_epochs \
-                --mode finetune \
-                --batch_size ${batch_size[task_id]} \
-                --val_batch_size 1 \
-                --acc_margin ${acc_margin[task_id]} \
-                --network_width_multiplier $network_width_multiplier \
-                --jsonfile logs/baseline_face_acc.txt \
-                --use_vgg_pretrained \
-                --log_path ${PREFIX}_checkpoints/CPG/$arch/run.log
+          :
+            # CUDA_VISIBLE_DEVICES=$GPU_ID python CPG_face_main.py \
+            #     --arch $arch \
+            #     --dataset ${dataset[task_id]} --num_classes ${num_classes[task_id]} \
+            #     --lr ${init_lr[task_id]} \
+            #     --lr_mask 5e-4 \
+            #     --weight_decay 4e-5 \
+            #     --save_folder checkpoints/CPG/experiment3/$arch/${dataset[task_id]}/scratch \
+            #     --epochs $finetune_epochs \
+            #     --mode finetune \
+            #     --batch_size ${batch_size[task_id]} \
+            #     --val_batch_size 1 \
+            #     --acc_margin ${acc_margin[task_id]} \
+            #     --network_width_multiplier $network_width_multiplier \
+            #     --jsonfile logs/baseline_face_acc.txt \
+            #     --use_vgg_pretrained \
+            #     --log_path checkpoints/CPG/experiment3/$arch/run.log
         fi
 
         state=$?
@@ -129,8 +130,8 @@ for task_id in `seq $TARGET_TASK_ID $TARGET_TASK_ID`; do
             --lr 0.0005 \
             --lr_mask 0.0 \
             --weight_decay 4e-5 \
-            --save_folder ${PREFIX}_checkpoints/CPG/$arch/${dataset[task_id]}/gradual_prune/$end_sparsity \
-            --load_folder ${PREFIX}_checkpoints/CPG/$arch/${dataset[task_id]}/scratch \
+            --save_folder checkpoints/CPG/experiment3/$arch/${dataset[task_id]}/gradual_prune/$end_sparsity \
+            --load_folder checkpoints/CPG/experiment3/$arch/${dataset[task_id]}/scratch \
             --epochs $nrof_epoch \
             --mode prune \
             --initial_sparsity=$start_sparsity \
@@ -142,7 +143,7 @@ for task_id in `seq $TARGET_TASK_ID $TARGET_TASK_ID`; do
             --val_batch_size 1 \
             --acc_margin ${acc_margin[task_id]} \
             --network_width_multiplier $network_width_multiplier \
-            --log_path ${PREFIX}_checkpoints/CPG/$arch/run.log
+            --log_path checkpoints/CPG/experiment3/$arch/run.log
         state=$?
         if [ $state -eq 2 ]
         then
@@ -173,8 +174,8 @@ for task_id in `seq $TARGET_TASK_ID $TARGET_TASK_ID`; do
             --lr 0.0005 \
             --lr_mask 0.0 \
             --weight_decay 4e-5 \
-            --save_folder ${PREFIX}_checkpoints/CPG/$arch/${dataset[task_id]}/gradual_prune/$end_sparsity \
-            --load_folder ${PREFIX}_checkpoints/CPG/$arch/${dataset[task_id]}/gradual_prune/$start_sparsity \
+            --save_folder checkpoints/CPG/experiment3/$arch/${dataset[task_id]}/gradual_prune/$end_sparsity \
+            --load_folder checkpoints/CPG/experiment3/$arch/${dataset[task_id]}/gradual_prune/$start_sparsity \
             --epochs $nrof_epoch \
             --mode prune \
             --initial_sparsity=$start_sparsity \
@@ -186,7 +187,7 @@ for task_id in `seq $TARGET_TASK_ID $TARGET_TASK_ID`; do
             --jsonfile logs/baseline_face_acc.txt \
             --acc_margin ${acc_margin[task_id]} \
             --network_width_multiplier $network_width_multiplier \
-            --log_path ${PREFIX}_checkpoints/CPG/$arch/run.log
+            --log_path checkpoints/CPG/experiment3/$arch/run.log
         if [ $? -eq 4 ]
         then
             break

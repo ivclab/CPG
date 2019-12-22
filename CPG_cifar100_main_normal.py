@@ -1,6 +1,4 @@
 """Main entry point for doing all stuff."""
-from __future__ import division, print_function
-
 import argparse
 import json
 import warnings
@@ -11,21 +9,21 @@ import torch.optim as optim
 import torch.backends.cudnn as cudnn
 from torch.nn.parameter import Parameter
 
-import UTILS.utils as utils
-import pdb
+import logging
 import os
+import pdb
 import math
 from tqdm import tqdm
 import sys
 import numpy as np
-from pprint import pprint
 
-import models.layers as nl
+import utils
+from utils import Optimizers, set_logger
+from utils.manager import Manager
+import utils.cifar100_dataset as dataset
 import models
-from UTILS.manager import Manager
-import UTILS.dataset as dataset
-import logging
-import shutil
+import models.layers as nl
+
 
 # To prevent PIL warnings.
 warnings.filterwarnings("ignore")
@@ -35,6 +33,7 @@ parser.add_argument('--arch', type=str, default='resnet50',
                    help='Architectures')
 parser.add_argument('--num_classes', type=int, default=-1,
                    help='Num outputs for dataset')
+
 # Optimization options.
 parser.add_argument('--lr', type=float, default=0.1,
                    help='Learning rate for parameters, used for baselines')
@@ -42,12 +41,6 @@ parser.add_argument('--lr_mask', type=float, default=1e-4,
                    help='Learning rate for mask')
 parser.add_argument('--lr_mask_decay_every', type=int,
                    help='Step decay every this many epochs')
-
-# parser.add_argument('--lr_classifier', type=float,
-#                    help='Learning rate for classifier')
-# parser.add_argument('--lr_classifier_decay_every', type=int,
-#                    help='Step decay every this many epochs')
-
 parser.add_argument('--batch_size', type=int, default=32,
                    help='input batch size for training')
 parser.add_argument('--val_batch_size', type=int, default=100,
@@ -55,6 +48,7 @@ parser.add_argument('--val_batch_size', type=int, default=100,
 parser.add_argument('--workers', type=int, default=24, help='')
 parser.add_argument('--weight_decay', type=float, default=0.0,
                    help='Weight decay')
+
 # Masking options.
 parser.add_argument('--mask_init', default='1s',
                    choices=['1s', 'uniform', 'weight_based_1s'],
@@ -68,6 +62,7 @@ parser.add_argument('--threshold_fn',
                    choices=['binarizer', 'ternarizer'],
                    help='Type of thresholding function')
 parser.add_argument('--threshold', type=float, default=2e-3, help='')
+
 # Paths.
 parser.add_argument('--dataset', type=str, default='',
                    help='Name of dataset')
@@ -77,18 +72,14 @@ parser.add_argument('--val_path', type=str, default='',
                    help='Location of test data')
 parser.add_argument('--save_prefix', type=str, default='checkpoints/',
                    help='Location to save model')
+
 # Other.
 parser.add_argument('--cuda', action='store_true', default=True,
                    help='use CUDA')
-# parser.add_argument('--no_mask', action='store_true', default=False,
-#                    help='Used for running baselines, does not use any masking')
-
 parser.add_argument('--seed', type=int, default=1, help='random seed')
-
-parser.add_argument('--checkpoint_format', type=str, 
-    default='./{save_folder}/checkpoint-{epoch}.pth.tar',
-    help='checkpoint file format')
-
+parser.add_argument('--checkpoint_format', type=str,
+                    default='./{save_folder}/checkpoint-{epoch}.pth.tar',
+                    help='checkpoint file format')
 parser.add_argument('--epochs', type=int, default=160,
                     help='number of epochs to train')
 parser.add_argument('--restore_epoch', type=int, default=0, help='')
@@ -96,25 +87,13 @@ parser.add_argument('--image_size', type=int, default=32, help='')
 parser.add_argument('--save_folder', type=str,
                     help='folder name inside one_check folder')
 parser.add_argument('--load_folder', default='', help='')
-
-# parser.add_argument('--datadir', default='/home/ivclab/decathlon-1.0/', 
-#                    help='folder containing data folder')
-# parser.add_argument('--imdbdir', default='/home/ivclab/decathlon-1.0/annotations', 
-#                    help='annotation folder')
-
-# parser.add_argument('--train_weight', action='store_true', default=False, help='')
-# parser.add_argument('--train_mask', action='store_true', default=False, help='')
-# parser.add_argument('--train_classifier', action='store_true', default=False, help='')
-
 parser.add_argument('--pruning_interval', type=int, default=100, help='')
 parser.add_argument('--pruning_frequency', type=int, default=10, help='')
 parser.add_argument('--initial_sparsity', type=float, default=0.0, help='')
 parser.add_argument('--target_sparsity', type=float, default=0.1, help='')
-
 parser.add_argument('--mode',
                    choices=['finetune', 'prune', 'inference'],
                    help='Run mode')
-
 parser.add_argument('--baseline_acc_file', type=str, help='file to restore baseline validation accuracy')
 parser.add_argument('--network_width_multiplier', type=float, default=1.0, help='the multiplier to scale up the channel width')
 parser.add_argument('--test_piggymask', action='store_true', default=False, help='')
@@ -125,53 +104,12 @@ parser.add_argument('--max_allowed_network_width_multiplier', type=float, help='
 parser.add_argument('--log_path', type=str, help='')
 parser.add_argument('--total_num_tasks', type=int, help='')
 
-class Optimizers(object):
-    def __init__(self):
-        self.optimizers = []
-        self.lrs = []
-        # self.args = args
-
-    def add(self, optimizer, lr):
-        self.optimizers.append(optimizer)
-        self.lrs.append(lr)
-
-    def step(self):
-        for optimizer in self.optimizers:
-            # if isinstance(optimizer, torch.optim.Adam):
-                # pdb.set_trace()
-            optimizer.step()
-
-    def zero_grad(self):
-        for optimizer in self.optimizers:
-            optimizer.zero_grad()
-
-    def __getitem__(self, index):
-        return self.optimizers[index]
-
-    def __setitem__(self, index, value):
-        self.optimizers[index] = value
-
-def set_logger(filepath):
-    global logger
-    logger = logging.getLogger('')
-    logger.setLevel(logging.INFO)
-    fh = logging.FileHandler(filepath)
-    fh.setLevel(logging.INFO)
-    ch = logging.StreamHandler(sys.stdout)
-    ch.setLevel(logging.INFO)
-  
-    _format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    fh.setFormatter(_format)
-    ch.setFormatter(_format)
-    
-    logger.addHandler(fh)
-    logger.addHandler(ch)
-    return
 
 def main():
     """Do stuff."""
     args = parser.parse_args()
-    # don't use this, neither set learning rate as a linear function
+
+    # Don't use this, neither set learning rate as a linear function
     # of the count of gpus, it will make accuracy lower
     # args.batch_size = args.batch_size * torch.cuda.device_count()
     args.network_width_multiplier = math.sqrt(args.network_width_multiplier)
@@ -193,7 +131,7 @@ def main():
     if not torch.cuda.is_available():
         logging.info('no gpu device available')
         args.cuda = False
-        
+
     torch.manual_seed(args.seed)
     if args.cuda:
         torch.cuda.manual_seed(args.seed)
@@ -214,11 +152,11 @@ def main():
 
     # Set default train and test path if not provided as input.
     utils.set_dataset_paths(args)
-                        
+
     if resume_from_epoch:
         filepath = args.checkpoint_format.format(save_folder=resume_folder, epoch=resume_from_epoch)
         checkpoint = torch.load(filepath)
-        checkpoint_keys = checkpoint.keys()        
+        checkpoint_keys = checkpoint.keys()
         dataset_history = checkpoint['dataset_history']
         dataset2num_classes = checkpoint['dataset2num_classes']
         masks = checkpoint['masks']
@@ -239,16 +177,16 @@ def main():
     with open(args.baseline_acc_file, 'r') as jsonfile:
         json_data = json.load(jsonfile)
         baseline_acc = float(json_data[args.dataset])
-    
+
     if args.mode == 'prune' and not args.pruning_ratio_to_acc_record_file:
         sys.exit(-1)
- 
-    if args.arch == 'resnet50' or args.arch == 'resnet18':
+
+    if args.arch == 'resnet18':
         model = models.__dict__[args.arch](dataset_history=dataset_history, dataset2num_classes=dataset2num_classes,
             network_width_multiplier=args.network_width_multiplier, shared_layer_info=shared_layer_info)
     elif 'vgg' in args.arch:
         custom_cfg = [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512, 'M', 512, 512, 512, 'M']
-        model = models.__dict__[args.arch](custom_cfg, dataset_history=dataset_history, dataset2num_classes=dataset2num_classes, 
+        model = models.__dict__[args.arch](custom_cfg, dataset_history=dataset_history, dataset2num_classes=dataset2num_classes,
             network_width_multiplier=args.network_width_multiplier, shared_layer_info=shared_layer_info)
     else:
         print('Error!')
@@ -278,7 +216,7 @@ def main():
                 elif masks[name].size(1) > module.weight.data.size(1):
                     assert args.mode == 'inference'
                     NEED_ADJUST_MASK = True
-                
+
 
         if NEED_ADJUST_MASK:
             if args.mode == 'finetune':
@@ -290,7 +228,7 @@ def main():
                         mask[:masks[name].size(0), :masks[name].size(1), :, :].copy_(masks[name])
                         masks[name] = mask
                     elif isinstance(module, nl.SharableLinear):
-                        mask = torch.ByteTensor(module.weight.data.size()).fill_(0)                
+                        mask = torch.ByteTensor(module.weight.data.size()).fill_(0)
                         if 'cuda' in module.weight.data.type():
                             mask = mask.cuda()
                         mask[:masks[name].size(0), :masks[name].size(1)].copy_(masks[name])
@@ -360,7 +298,7 @@ def main():
     else:
         print("num_classes should be either 2 or 5")
         sys.exit(1)
-        
+
     # if we are going to save checkpoint in other folder, then we recalculate the starting epoch
     if args.save_folder != args.load_folder:
         start_epoch = 0
@@ -389,7 +327,7 @@ def main():
         if 'classifiers' in name:
             if '.{}.'.format(model.module.datasets.index(args.dataset)) in name:
                 params_to_optimize_via_SGD.append(param)
-                named_of_params_to_optimize_via_SGD.append(name)                
+                named_of_params_to_optimize_via_SGD.append(name)
             continue
         elif 'piggymask' in name:
             masks_to_optimize_via_Adam.append(param)
@@ -432,7 +370,7 @@ def main():
 
 
         if args.network_width_multiplier == args.max_allowed_network_width_multiplier and json_data['0.0'] < baseline_acc:
-            # if we reach the upperbound and still do not get the accuracy over our target on curr task, we still do pruning
+            # If we reach the upperbound and still do not get the accuracy over our target on curr task, we still do pruning
             logging.info('we reach the upperbound and still do not get the accuracy over our target on curr task')
             remain_num_tasks = args.total_num_tasks - len(dataset_history)
             logging.info('remain_num_tasks: {}'.format(remain_num_tasks))
@@ -489,7 +427,7 @@ def main():
             if args.finetune_again and num_epochs_that_criterion_does_not_get_better == 5:
                 logging.info("stop retraining")
                 sys.exit(0)
-    
+
         if args.mode == 'finetune':
             if epoch_idx + 1 == 50 or epoch_idx + 1 == 80:
                 for param_group in optimizers[0].param_groups:
@@ -514,7 +452,7 @@ def main():
     else:
         print('Something is wrong! Block the program with pdb')
         pdb.set_trace()
-    
+
     if avg_train_acc > 0.95:
         manager.save_checkpoint(optimizers, epoch_idx, args.save_folder)
 
@@ -541,7 +479,7 @@ def main():
                 logging.info("It's time to expand the Network")
                 logging.info('Auto expand network')
                 sys.exit(2)
-                
+
             if manager.pruner.calculate_curr_task_ratio() == 0.0:
                 logging.info('There is no left space in convolutional layer for curr task, so needless to prune')
                 sys.exit(5)
@@ -557,7 +495,7 @@ def main():
             must_pruning_ratio_for_curr_task = 0.0
 
             if args.network_width_multiplier == args.max_allowed_network_width_multiplier and json_data['0.0'] < baseline_acc:
-                # if we reach the upperbound and still do not get the accuracy over our target on curr task, we still do pruning
+                # If we reach the upperbound and still do not get the accuracy over our target on curr task, we still do pruning
                 logging.info('we reach the upperbound and still do not get the accuracy over our target on curr task')
                 remain_num_tasks = args.total_num_tasks - len(dataset_history)
                 logging.info('remain_num_tasks: {}'.format(remain_num_tasks))
@@ -568,4 +506,4 @@ def main():
                     sys.exit(6)
 
 if __name__ == '__main__':
-  main()
+    main()

@@ -1,10 +1,7 @@
 """Main entry point for doing all stuff."""
-from __future__ import division, print_function
-
 import argparse
 import json
 import warnings
-import logging
 
 import torch
 import torch.nn as nn
@@ -13,25 +10,26 @@ import torch.backends.cudnn as cudnn
 from torch.nn.parameter import Parameter
 import torchvision.transforms as transforms
 
-import FACE_UTILS as utils
+import logging
 import pdb
 import os
 import math
 from tqdm import tqdm
 import sys
 import numpy as np
-from pprint import pprint
 
-import models.layers as nl
+import utils
+from utils import Optimizers, set_logger
+from utils.manager import Manager
+from utils.LFWDataset import LFWDataset
+import utils.face_dataset as dataset
 import models
-from FACE_UTILS.manager import Manager
-import FACE_UTILS.dataset as dataset
-from FACE_UTILS.LFWDataset import LFWDataset
+import models.layers as nl
 
 
 #{{{ Arguments
-INIT_WEIGHT_PATH = 'common_data/face_weight.pth'
-LFW_PAIRS_PATH   = 'common_data/lfw_pairs.txt'
+INIT_WEIGHT_PATH = 'face_data/face_weight.pth'
+LFW_PAIRS_PATH   = 'face_data/lfw_pairs.txt'
 
 # To prevent PIL warnings.
 warnings.filterwarnings("ignore")
@@ -118,59 +116,15 @@ parser.add_argument('--acc_margin', type=float, default=0.01,
 #}}}
 
 
-#{{{ Multiple optimizers
-class Optimizers(object):
-    def __init__(self):
-        self.optimizers = []
-        self.lrs = []
-
-    def add(self, optimizer, lr):
-        self.optimizers.append(optimizer)
-        self.lrs.append(lr)
-
-    def step(self):
-        for optimizer in self.optimizers:
-            optimizer.step()
-
-    def zero_grad(self):
-        for optimizer in self.optimizers:
-            optimizer.zero_grad()
-
-    def __getitem__(self, index):
-        return self.optimizers[index]
-
-    def __setitem__(self, index, value):
-        self.optimizers[index] = value
-#}}}
-
-
-def set_logger(filepath):
-    global logger
-    logger = logging.getLogger('')
-    logger.setLevel(logging.INFO)
-    fh = logging.FileHandler(filepath)
-    fh.setLevel(logging.INFO)
-    ch = logging.StreamHandler(sys.stdout)
-    ch.setLevel(logging.INFO)
-
-    _format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    fh.setFormatter(_format)
-    ch.setFormatter(_format)
-
-    logger.addHandler(fh)
-    logger.addHandler(ch)
-    return
-
-
 def main():
     """Do stuff."""
     #{{{ Setting arguments, resume epochs and datasets
     args = parser.parse_args()
-    set_logger(args.log_path)
     args.network_width_multiplier = math.sqrt(args.network_width_multiplier)
 
     if args.save_folder and not os.path.isdir(args.save_folder):
         os.makedirs(args.save_folder)
+    set_logger(args.log_path)
 
     if not torch.cuda.is_available():
         logging.info('no gpu device available')

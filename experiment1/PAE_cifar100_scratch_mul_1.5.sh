@@ -27,16 +27,19 @@ dataset=(
 
 
 GPU_ID=0
-setting='scratch_mul_1.5'
-baseline_cifar100_acc='logs/baseline_cifar100_acc.txt'
-max_allowed_network_width_multiplier=1.5
+# setting='scratch_mul_1.5'  ## TODO HERE
+setting='finetune_max_mul_2.0'  ## TODO HERE
+# baseline_cifar100_acc='logs/baseline_cifar100_acc.txt'  ## TODO HERE
+baseline_cifar100_acc='logs/finetune_max_cifar100_acc.txt'  ## TODO HERE
+# max_allowed_network_width_multiplier=1.5  ## TODO HERE
+max_allowed_network_width_multiplier=2.0  ## TODO HERE
 
 arch='custom_vgg_cifar100'
 finetune_epochs=100
 network_width_multiplier=1.0
 pruning_ratio_interval=0.1
 lr=1e-2
-lr_mask=5e-4
+lr_mask=0.0  # No picking masks enable
 gradual_prune_lr=1e-3
 num_classes=5
 batch_size=32
@@ -57,15 +60,15 @@ for task_id in `seq 1 20`; do
                 --lr_mask $lr_mask \
                 --batch_size $batch_size \
                 --weight_decay 4e-5 \
-                --save_folder checkpoints/CPG/experiment1/$setting/$arch/${dataset[task_id]}/scratch \
-                --load_folder checkpoints/CPG/experiment1/$setting/$arch/${dataset[task_id-1]}/gradual_prune \
+                --save_folder checkpoints/PAE/experiment1/$setting/$arch/${dataset[task_id]}/scratch \
+                --load_folder checkpoints/PAE/experiment1/$setting/$arch/${dataset[task_id-1]}/gradual_prune \
                 --epochs $finetune_epochs \
                 --mode finetune \
                 --network_width_multiplier $network_width_multiplier \
                 --max_allowed_network_width_multiplier $max_allowed_network_width_multiplier \
                 --baseline_acc_file $baseline_cifar100_acc \
-                --pruning_ratio_to_acc_record_file checkpoints/CPG/experiment1/$setting/$arch/${dataset[task_id]}/gradual_prune/record.txt \
-                --log_path checkpoints/CPG/experiment1/$setting/$arch/${dataset[task_id]}/train.log \
+                --pruning_ratio_to_acc_record_file checkpoints/PAE/experiment1/$setting/$arch/${dataset[task_id]}/gradual_prune/record.txt \
+                --log_path checkpoints/PAE/experiment1/$setting/$arch/${dataset[task_id]}/train.log \
                 --total_num_tasks $total_num_tasks
         else
             CUDA_VISIBLE_DEVICES=$GPU_ID python CPG_cifar100_main_normal.py \
@@ -75,14 +78,14 @@ for task_id in `seq 1 20`; do
                 --lr_mask $lr_mask \
                 --batch_size $batch_size \
                 --weight_decay 4e-5 \
-                --save_folder checkpoints/CPG/experiment1/$setting/$arch/${dataset[task_id]}/scratch \
+                --save_folder checkpoints/PAE/experiment1/$setting/$arch/${dataset[task_id]}/scratch \
                 --epochs $finetune_epochs \
                 --mode finetune \
                 --network_width_multiplier $network_width_multiplier \
                 --max_allowed_network_width_multiplier $max_allowed_network_width_multiplier \
                 --baseline_acc_file $baseline_cifar100_acc \
-                --pruning_ratio_to_acc_record_file checkpoints/CPG/experiment1/$setting/$arch/${dataset[task_id]}/gradual_prune/record.txt \
-                --log_path checkpoints/CPG/experiment1/$setting/$arch/${dataset[task_id]}/train.log \
+                --pruning_ratio_to_acc_record_file checkpoints/PAE/experiment1/$setting/$arch/${dataset[task_id]}/gradual_prune/record.txt \
+                --log_path checkpoints/PAE/experiment1/$setting/$arch/${dataset[task_id]}/train.log \
                 --total_num_tasks $total_num_tasks
         fi
 
@@ -116,8 +119,8 @@ for task_id in `seq 1 20`; do
             --lr_mask 0.0 \
             --batch_size $batch_size \
             --weight_decay 4e-5 \
-            --save_folder checkpoints/CPG/experiment1/$setting/$arch/${dataset[task_id]}/gradual_prune \
-            --load_folder checkpoints/CPG/experiment1/$setting/$arch/${dataset[task_id]}/scratch \
+            --save_folder checkpoints/PAE/experiment1/$setting/$arch/${dataset[task_id]}/gradual_prune \
+            --load_folder checkpoints/PAE/experiment1/$setting/$arch/${dataset[task_id]}/scratch \
             --epochs $nrof_epoch \
             --mode prune \
             --initial_sparsity=$start_sparsity \
@@ -127,8 +130,8 @@ for task_id in `seq 1 20`; do
             --baseline_acc_file $baseline_cifar100_acc \
             --network_width_multiplier $network_width_multiplier \
             --max_allowed_network_width_multiplier $max_allowed_network_width_multiplier \
-            --pruning_ratio_to_acc_record_file checkpoints/CPG/experiment1/$setting/$arch/${dataset[task_id]}/gradual_prune/record.txt \
-            --log_path checkpoints/CPG/experiment1/$setting/$arch/${dataset[task_id]}/train.log \
+            --pruning_ratio_to_acc_record_file checkpoints/PAE/experiment1/$setting/$arch/${dataset[task_id]}/gradual_prune/record.txt \
+            --log_path checkpoints/PAE/experiment1/$setting/$arch/${dataset[task_id]}/train.log \
             --total_num_tasks $total_num_tasks
 
         if [ $? -ne 6 ]
@@ -150,8 +153,8 @@ for task_id in `seq 1 20`; do
                     --lr_mask 0.0 \
                     --batch_size $batch_size \
                     --weight_decay 4e-5 \
-                    --save_folder checkpoints/CPG/experiment1/$setting/$arch/${dataset[task_id]}/gradual_prune \
-                    --load_folder checkpoints/CPG/experiment1/$setting/$arch/${dataset[task_id]}/gradual_prune \
+                    --save_folder checkpoints/PAE/experiment1/$setting/$arch/${dataset[task_id]}/gradual_prune \
+                    --load_folder checkpoints/PAE/experiment1/$setting/$arch/${dataset[task_id]}/gradual_prune \
                     --epochs $nrof_epoch \
                     --mode prune \
                     --initial_sparsity=$start_sparsity \
@@ -161,8 +164,8 @@ for task_id in `seq 1 20`; do
                     --baseline_acc_file $baseline_cifar100_acc \
                     --network_width_multiplier $network_width_multiplier \
                     --max_allowed_network_width_multiplier $max_allowed_network_width_multiplier \
-                    --pruning_ratio_to_acc_record_file checkpoints/CPG/experiment1/$setting/$arch/${dataset[task_id]}/gradual_prune/record.txt \
-                    --log_path checkpoints/CPG/experiment1/$setting/$arch/${dataset[task_id]}/train.log \
+                    --pruning_ratio_to_acc_record_file checkpoints/PAE/experiment1/$setting/$arch/${dataset[task_id]}/gradual_prune/record.txt \
+                    --log_path checkpoints/PAE/experiment1/$setting/$arch/${dataset[task_id]}/train.log \
                     --total_num_tasks $total_num_tasks
 
                 if [ $? -eq 6 ]
@@ -175,39 +178,11 @@ for task_id in `seq 1 20`; do
 
     # Choose the checkpoint that we want
     python tools/choose_appropriate_pruning_ratio_for_next_task.py \
-        --pruning_ratio_to_acc_record_file checkpoints/CPG/experiment1/$setting/$arch/${dataset[task_id]}/gradual_prune/record.txt \
+        --pruning_ratio_to_acc_record_file checkpoints/PAE/experiment1/$setting/$arch/${dataset[task_id]}/gradual_prune/record.txt \
         --baseline_acc_file $baseline_cifar100_acc \
         --allow_acc_loss 0.0 \
         --dataset ${dataset[task_id]} \
         --max_allowed_network_width_multiplier $max_allowed_network_width_multiplier \
         --network_width_multiplier $network_width_multiplier \
-        --log_path checkpoints/CPG/experiment1/$setting/$arch/${dataset[task_id]}/train.log
-
-    if [ $task_id != 1 ] && [ $state -ne 5 ]
-    then
-    	# Retrain piggymask and weight
-    	CUDA_VISIBLE_DEVICES=$GPU_ID python CPG_cifar100_main_normal.py \
-    	    --arch $arch \
-    	    --dataset ${dataset[task_id]} --num_classes $num_classes \
-    	    --lr $gradual_prune_lr \
-    	    --lr_mask 1e-4 \
-    	    --batch_size $batch_size \
-    	    --weight_decay 4e-5 \
-    	    --save_folder checkpoints/CPG/experiment1/$setting/$arch/${dataset[task_id]}/retrain \
-    	    --load_folder checkpoints/CPG/experiment1/$setting/$arch/${dataset[task_id]}/gradual_prune \
-    	    --epochs 30 \
-    	    --mode finetune \
-    	    --network_width_multiplier $network_width_multiplier \
-    	    --max_allowed_network_width_multiplier $max_allowed_network_width_multiplier \
-    	    --baseline_acc_file $baseline_cifar100_acc \
-    	    --pruning_ratio_to_acc_record_file checkpoints/CPG/experiment1/$setting/$arch/${dataset[task_id]}/retrain/record.txt \
-    	    --log_path checkpoints/CPG/experiment1/$setting/$arch/${dataset[task_id]}/train.log \
-    	    --total_num_tasks $total_num_tasks \
-    	    --finetune_again
-
-        # If there is any improve from retraining, use that checkpoint
-        python tools/choose_retrain_or_not.py \
-            --save_folder checkpoints/CPG/experiment1/$setting/$arch/${dataset[task_id]}/gradual_prune \
-            --load_folder checkpoints/CPG/experiment1/$setting/$arch/${dataset[task_id]}/retrain
-    fi
+        --log_path checkpoints/PAE/experiment1/$setting/$arch/${dataset[task_id]}/train.log
 done

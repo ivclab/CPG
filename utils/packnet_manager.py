@@ -1,39 +1,13 @@
-import .dataset as dataset
 import torch
 import torch.nn as nn
-import torch.optim as optim
 import torch.nn.functional as F
 import numpy as np
-from .packnet_prune import SparsePruner
 from tqdm import tqdm
-import pdb
-from pprint import pprint
-import os
-import math
-from datetime import datetime
 from torch.autograd import Variable
+from . import Metric, classification_accuracy
+from .packnet_prune import SparsePruner
 from .metrics import fv_evaluate
 from packnet_models import AngleLoss
-
-
-class Metric(object):
-    def __init__(self, name):
-        self.name = name
-        self.sum = torch.tensor(0.)
-        self.n = torch.tensor(0.)
-
-    def update(self, val):
-        self.sum += val
-        self.n += 1
-
-    @property
-    def avg(self):
-        return self.sum / self.n
-
-def accuracy(output, target):
-    # get the index of the max log-probability
-    pred = output.max(1, keepdim=True)[1]
-    return pred.eq(target.view_as(pred)).cpu().float().mean()
 
 
 class Manager(object):
@@ -45,7 +19,6 @@ class Manager(object):
         self.shared_layer_info = shared_layer_info
         self.inference_dataset_idx = self.model.module.datasets.index(args.dataset) + 1
         self.pruner = SparsePruner(self.model, masks, self.args, None, None, self.inference_dataset_idx)
-
         self.train_loader = train_loader
         self.val_loader   = val_loader
 
@@ -57,6 +30,7 @@ class Manager(object):
             self.criterion = nn.CrossEntropyLoss(weight=class_weights.cuda())
         else:
             self.criterion = nn.CrossEntropyLoss()
+        return
 
     def train(self, optimizers, epoch_idx, curr_lrs):
         # Set model to training mode
@@ -77,11 +51,12 @@ class Manager(object):
                 # Do forward-backward.
                 output = self.model(data)
 
+                num = data.size(0)
                 if self.args.dataset != 'face_verification':
-                    train_accuracy.update(accuracy(output, target))
+                    train_accuracy.update(classification_accuracy(output, target), num)
 
                 loss = self.criterion(output, target)
-                train_loss.update(loss)
+                train_loss.update(loss, num)
                 loss.backward()
 
                 # Set fixed param grads to 0.
@@ -97,9 +72,7 @@ class Manager(object):
                                'accuracy': '{:.2f}'.format(100. * train_accuracy.avg.item()),
                                'lr': curr_lrs[0],
                                'sparsity': self.pruner.calculate_sparsity()})
-
                 t.update(1)
-
         return train_accuracy.avg.item()
 
     #{{{ Evaluate classification
@@ -119,9 +92,9 @@ class Manager(object):
                         data, target = data.cuda(), target.cuda()
 
                     output = self.model(data)
-
-                    val_loss.update(self.criterion(output, target))
-                    val_accuracy.update(accuracy(output, target))
+                    num = data.size(0)
+                    val_loss.update(self.criterion(output, target), num)
+                    val_accuracy.update(classification_accuracy(output, target), num)
 
                     t.set_postfix({'loss': val_loss.avg.item(),
                                    'accuracy': '{:.2f}'.format(100. * val_accuracy.avg.item()),
@@ -129,7 +102,6 @@ class Manager(object):
                                    'task{} ratio'.format(self.inference_dataset_idx): self.pruner.calculate_curr_task_ratio(),
                                    'zero ratio': self.pruner.calculate_zero_ratio()})
                     t.update(1)
-
         return val_accuracy.avg.item()
     #}}}
 
@@ -168,13 +140,13 @@ class Manager(object):
         embedding_list_b = np.array([item for embedding in embedding_list_b for item in embedding])
         tpr, fpr, accuracy, val, val_std, far = fv_evaluate(embedding_list_a, embedding_list_b, labels,
                                                 distance_metric=distance_metric, subtract_mean=subtract_mean)
-        print('\33[91mTest set: Accuracy: {:.5f}+-{:.5f}\n\33[0m'.format(np.mean(accuracy),np.std(accuracy)))
-        print('\33[91mTest set: Validation rate: {:.5f}+-{:.5f} @ FAR={:.5f}\n\33[0m'.format(val,val_std, far))
+        print('Test set: Accuracy: {:.5f}+-{:.5f}'.format(np.mean(accuracy),np.std(accuracy)))
         return np.mean(accuracy)
     #}}}
 
     def one_shot_prune(self, one_shot_prune_perc):
         self.pruner.one_shot_prune(one_shot_prune_perc)
+        return
 
     def save_checkpoint(self, optimizers, epoch_idx, save_folder):
         """Saves model to file."""
@@ -202,18 +174,18 @@ class Manager(object):
 
         checkpoint = {
             'model_state_dict': self.model.module.state_dict(),
-            'optimizer_network_state_dict': optimizers[0].state_dict(),
             'dataset_history': self.model.module.datasets,
             'dataset2num_classes': self.model.module.dataset2num_classes,
             'masks': self.pruner.masks,
             'shared_layer_info': self.shared_layer_info,
+            # 'optimizer_network_state_dict': optimizers[0].state_dict(),
         }
 
         torch.save(checkpoint, filepath)
+        return
 
-    def load_checkpoint(self, optimizers, resume_from_epoch, save_folder, restore_optimizers=True):
-        # Restore from a previous checkpoint, if initial_epoch is specified.
-        # Horovod: restore on the first worker which will broadcast weights to other workers.
+    def load_checkpoint(self, optimizers, resume_from_epoch, save_folder):
+
         if resume_from_epoch > 0:
             filepath = self.args.checkpoint_format.format(save_folder=save_folder, epoch=resume_from_epoch)
             checkpoint = torch.load(filepath)
@@ -221,17 +193,16 @@ class Manager(object):
             state_dict = checkpoint['model_state_dict']
             curr_model_state_dict = self.model.module.state_dict()
             for name, param in state_dict.items():
-                if name == 'classifier.weight' or name == 'classifier.bias' or (name == 'classifier.0.weight' or name == 'classifier.0.bias' or name == 'classifier.1.weight'):
+                if (name == 'classifier.weight' or name == 'classifier.bias' or
+                    (name == 'classifier.0.weight' or name == 'classifier.0.bias' or name == 'classifier.1.weight')):
                      # I DONT WANT TO DO THIS! QQ That last 3 exprs are for anglelinear and embeddings
                     continue
                 else:
                     curr_model_state_dict[name].copy_(param)
-
-            # if restore_optimizers:
-            #     if 'optimizer_network_state_dict' in checkpoint_keys:
-                    # optimizers[0].load_state_dict(checkpoint['optimizer_network_state_dict'])
+        return
 
     def load_checkpoint_for_inference(self, resume_from_epoch, save_folder):
+
         if resume_from_epoch > 0:
             filepath = self.args.checkpoint_format.format(save_folder=save_folder, epoch=resume_from_epoch)
             checkpoint = torch.load(filepath)
@@ -240,7 +211,8 @@ class Manager(object):
             curr_model_state_dict = self.model.module.state_dict()
 
             for name, param in state_dict.items():
-                if name == 'classifier.weight' or name == 'classifier.bias' or (name == 'classifier.0.weight' or name == 'classifier.0.bias' or name == 'classifier.1.weight'):
+                if (name == 'classifier.weight' or name == 'classifier.bias' or
+                    (name == 'classifier.0.weight' or name == 'classifier.0.bias' or name == 'classifier.1.weight')):
                      # I DONT WANT TO DO THIS! QQ That last 3 exprs are for anglelinear and embeddings
                     continue
                 else:
