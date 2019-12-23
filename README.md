@@ -50,7 +50,7 @@ $ bash experiment1/inference_CPG_cifar100.sh
 ```
 
 
-### CPG-VGG16 [Checkpoints](https://drive.google.com/open?id=1pcbazW4onWWSxWjZCG6fngB3ixX2Mv9a) on CIFAR-100 Twenty Tasks.
+### CPG-VGG16 [Checkpoints](https://drive.google.com/file/d/1pcbazW4onWWSxWjZCG6fngB3ixX2Mv9a/view?usp=sharing) on CIFAR-100 Twenty Tasks.
 
 Extract the downloaded .zip file and place `all_max_mul_1.5/` in `checkpoints/CPG/experiment1/`. Modify the `SETTING` variable in `experiment1/inference_CPG_cifar100.sh` to `all_max_mul_1.5` before inference. 
 
@@ -112,7 +112,7 @@ $ bash experiment2/inference_CPG_imagenet.sh
 ```
 
 
-### CPG-ResNet50 [Checkpoints](https://drive.google.com/open?id=1wTy-QrtD7wzAs55WnQBFoUzY4ruYocGY) on Fine-grained Dataset.
+### CPG-ResNet50 [Checkpoints](https://drive.google.com/file/d/1wTy-QrtD7wzAs55WnQBFoUzY4ruYocGY/view?usp=sharing) on Fine-grained Dataset.
 
 Extract the downloaded .zip file and place `resnet50/` in `checkpoints/CPG/experiment2/`. 
 
@@ -125,10 +125,10 @@ Extract the downloaded .zip file and place `resnet50/` in `checkpoints/CPG/exper
 
 ## Experiment3 (Compact 4 facial-informatic tasks into CNN20 network)
 
-**Step 1.** We provide the datasets of 3 tasks, including *emotion*, *gender* and *age* (without *face_verification*). For the *age* task, we adopt the 5-fold scenario and thus have *age0*, *age1*, ... , *age4* which correspond to the five splits. All face images are aligned using [MTCNN](https://arxiv.org/ftp/arxiv/papers/1604/1604.02878.pdf) with output size of 112 x 112. The converted datasets can be downloaded [here](https://drive.google.com/open?id=1F2jx7k15EWA1P64Bp462ovB4zHb50tz_). 
+**Step 1.** We provide the datasets of 3 tasks, including *emotion*, *gender* and *age* (without *face_verification*). For the *age* task, we adopt the 5-fold scenario and thus have *age0*, *age1*, ... , *age4* which correspond to the five splits. All face images are aligned using [MTCNN](https://arxiv.org/ftp/arxiv/papers/1604/1604.02878.pdf) with output size of 112 x 112. The converted datasets can be downloaded [here](https://drive.google.com/file/d/1F2jx7k15EWA1P64Bp462ovB4zHb50tz_/view?usp=sharing). 
 
 
-**Step 2.** Similarly, we need accuracy goals of the 4 tasks for CPG. We train CNN20 on VGGFace2 for the *face verification* task and finetune it to *emotion*, *gender* and *age* tasks. This [link](https://drive.google.com/open?id=1P3KiJGdanBbTpSFeLtbQCXIyoYrW8LtN) provides our *face verification* CNN20 pretrained weights (named `face_weight.pth`), and the following command finetunes the model to other 3 tasks. To evaluate the *face verification* task, we also need `lfw_pairs.txt` which can be downloaded [here](https://drive.google.com/open?id=1wuKxHrDXebWicDxqt6FpBMhMbdN6wEDf). Download `face_weight.pth` and `lfw_pairs.txt` use the links and place them in `face_data/`.
+**Step 2.** Similarly, we need accuracy goals of the 4 tasks for CPG. We train CNN20 on VGGFace2 for the *face verification* task and finetune it to *emotion*, *gender* and *age* tasks. This [link](https://drive.google.com/file/d/1P3KiJGdanBbTpSFeLtbQCXIyoYrW8LtN/view?usp=sharing) provides our *face verification* CNN20 pretrained weights (named `face_weight.pth`), and the following command finetunes the model to other 3 tasks. To evaluate the *face verification* task, we also need `lfw_pairs.txt` which can be downloaded [here](https://drive.google.com/file/d/1wuKxHrDXebWicDxqt6FpBMhMbdN6wEDf/view?usp=sharing). Download `face_weight.pth` and `lfw_pairs.txt` use the links and place them in `face_data/`.
 
 ```
 $ bash experiment3/baseline_face.sh 
@@ -140,7 +140,7 @@ The finetuning results are used as accuracy goals and stored in `logs/baseline_f
 {"face_verification": "0.9942", "gender": "0.9080", "emotion": "0.6254", "chalearn_gender": "0.9128", "age0": "0.6531", "age1": "0.5381", "age2": "0.5847", "age3": "0.5151", "age4": "0.5727"}
 ```
 
-**Step 3.** Similar to Experiment2, we add tasks sequentially by iteratively runing the following command and copy the pruned models with appropriate pruning ratios. 
+**Step 3.** Similar to Experiment2, we add tasks sequentially by iteratively running the following command and copy the pruned models with appropriate pruning ratios. 
 
 ```
 $ bash experiment3/FvGeEm_CPG_face.sh 
@@ -167,7 +167,7 @@ For an example of using this script, please see `experiment3/inference_checkpoin
 
 
 
-### CPG-CNN20 [Checkpoints](https://drive.google.com/open?id=1TYcmaWm1kwkj4v-Zy43XuREyYOPIbghJ) on Facial-informatic Dataset.
+### CPG-CNN20 [Checkpoints](https://drive.google.com/file/d/1TYcmaWm1kwkj4v-Zy43XuREyYOPIbghJ/view?usp=sharing) on Facial-informatic Dataset.
 
 Extract the downloaded .zip file, place `spherenet20/` in `checkpoints/CPG/experiment3/` and use the following command for inference with the checkpoints. 
 
