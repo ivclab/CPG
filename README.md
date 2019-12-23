@@ -23,9 +23,9 @@ Please cite following paper if these codes help your research:
 
 ## Experiment1 (Compact 20 tasks into VGG16 network)
 
-** Step 1. ** Download CIFAR100 and form the 20 tasks based on their super classes with the [cifar2png](https://github.com/knjcode/cifar2png) tool. Or you can just download the converted version of our CIFAR100 from [here](https://drive.google.com/file/d/1eo2RhMmhxzUNOZa0Z7jy7y4lOn3lqddU/view?usp=sharing). Unzip the compressed file and place `cifar100_org/` in `data/`. 
+**Step 1.** Download CIFAR100 and form the 20 tasks based on their super classes with the [cifar2png](https://github.com/knjcode/cifar2png) tool. Or you can just download the converted version of our CIFAR100 from [here](https://drive.google.com/file/d/1eo2RhMmhxzUNOZa0Z7jy7y4lOn3lqddU/view?usp=sharing). Unzip the compressed file and place `cifar100_org/` in `data/`. 
 
-** Step 2. ** Use the following command to train individual models for each of the 20 tasks so that we can obtain their accuracy goals. 
+**Step 2.** Use the following command to train individual models for each of the 20 tasks so that we can obtain their accuracy goals. 
 
 ```
 $ bash experiement1/baseline_cifar100.sh 
@@ -34,7 +34,7 @@ $ bash experiement1/baseline_cifar100.sh
 If you would like to use higher accuracy goals, execute `experiment1/finetune_cifar100.sh` instead. The script randomly selects a model trained on previous tasks and finetunes it to the current one. After this step, we obtain `logs/baseline_cifar100_acc.txt` that contains accuracy goals for 20 tasks. 
 
 
-** Step 3. ** Run CPG to learn 20 tasks sequentially.
+**Step 3.** Run CPG to learn 20 tasks sequentially.
 
 ```
 $ bash experiment1/CPG_cifar100_scratch_1.5.sh 
@@ -43,7 +43,7 @@ $ bash experiment1/CPG_cifar100_scratch_1.5.sh
 If you use another accuracy goals, please modify the `baseline_cifar100_acc` variable in `experiment1/CPG_cifar100_scratch_1.5.sh` to the path containing your accuracy goals. 
 
 
-** Step 4. ** Inference the learned 20 tasks. 
+**Step 4.** Inference the learned 20 tasks. 
 
 ```
 $ bash experiment1/inference_CPG_cifar100.sh
@@ -66,10 +66,10 @@ Extract the downloaded .zip file and place `all_max_mul_1.5/` in `checkpoints/CP
 ## Experiment2 (Compact 6 fine-grained image tasks into ResNet50 network)  
 
 
-** Step 1. ** We provide the datasets of 5 tasks, including *cubs_cropped*, *stanford_cars_cropped*, *flowers*, *wikiart* and *sketches* (without *imagenet*), and they can be downloaded [here](https://drive.google.com/file/d/1a-FiCtYO_7nRcI9eIHrlZysq_0N3Sh2P/view?usp=sharing). After downloading, place the extracted directories in `data/`. If you would like to construct datasets yourself, please refer to [piggyback](https://github.com/arunmallya/piggyback). 
+**Step 1.** We provide the datasets of 5 tasks, including *cubs_cropped*, *stanford_cars_cropped*, *flowers*, *wikiart* and *sketches* (without *imagenet*), and they can be downloaded [here](https://drive.google.com/file/d/1a-FiCtYO_7nRcI9eIHrlZysq_0N3Sh2P/view?usp=sharing). After downloading, place the extracted directories in `data/`. If you would like to construct datasets yourself, please refer to [piggyback](https://github.com/arunmallya/piggyback). 
 
 
-** Step 2. ** Similar to Experiment1, we need to construct the accuracy goals for the 6 tasks. With the following command, we finetune the model pretrained on ImageNet to the other 5 tasks and produce accuracy goals stored in `logs/baseline_imagenet_acc_resnet50.txt`. 
+**Step 2.** Similar to Experiment1, we need to construct the accuracy goals for the 6 tasks. With the following command, we finetune the model pretrained on ImageNet to the other 5 tasks and produce accuracy goals stored in `logs/baseline_imagenet_acc_resnet50.txt`. 
 
 ```
 $ bash experiment2/baseline_imagenet.sh
@@ -81,7 +81,7 @@ Or we can simply use the results of individual ResNet50 networks reported in the
 {"imagenet": "0.7616", "cubs_cropped": "0.8283", "stanford_cars_cropped": "0.9183", "flowers": "0.9656", "wikiart": "0.7560", "sketches": "0.8078"}
 ```
 
-** Step 3. ** Run CPG and choose the desired pruning ratio for each of the 6 tasks.
+**Step 3.** Run CPG and choose the desired pruning ratio for each of the 6 tasks.
 
 ```
 $ bash experiment2/CPG_imagenet.sh 
@@ -102,10 +102,10 @@ $ cp 0.4/checkpoint-46.pth.tar ./checkpoint-46.pth.tar
 
 At last, we modify `TARGET_TASK_ID` to 2 and execute `experiment2/CPG_imagenet.sh` again so that CPG proceeds to learn the next task. 
 
-We repeat ** Step 3. ** to sequentially learn the 6 tasks. 
+We repeat **Step 3.** to sequentially learn the 6 tasks. 
 
 
-** Step 4. ** Inference the learned 6 tasks. 
+**Step 4.** Inference the learned 6 tasks. 
 
 ```
 $ bash experiment2/inference_CPG_imagenet.sh
@@ -125,10 +125,10 @@ Extract the downloaded .zip file and place `resnet50/` in `checkpoints/CPG/exper
 
 ## Experiment3 (Compact 4 facial-informatic tasks into CNN20 network)
 
-** Step 1. ** We provide the datasets of 3 tasks, including *emotion*, *gender* and *age* (without *face_verification*). For the *age* task, we adopt the 5-fold scenario and thus have *age0*, *age1*, ... , *age4* which correspond to the five splits. All face images are aligned using [MTCNN](https://arxiv.org/ftp/arxiv/papers/1604/1604.02878.pdf) with output size of 112 x 112. The converted datasets can be downloaded [here](https://drive.google.com/open?id=1F2jx7k15EWA1P64Bp462ovB4zHb50tz_). 
+**Step 1.** We provide the datasets of 3 tasks, including *emotion*, *gender* and *age* (without *face_verification*). For the *age* task, we adopt the 5-fold scenario and thus have *age0*, *age1*, ... , *age4* which correspond to the five splits. All face images are aligned using [MTCNN](https://arxiv.org/ftp/arxiv/papers/1604/1604.02878.pdf) with output size of 112 x 112. The converted datasets can be downloaded [here](https://drive.google.com/open?id=1F2jx7k15EWA1P64Bp462ovB4zHb50tz_). 
 
 
-** Step 2. ** Similarly, we need accuracy goals of the 4 tasks for CPG. We train CNN20 on VGGFace2 for the *face verification* task and finetune it to *emotion*, *gender* and *age* tasks. This [link](https://drive.google.com/open?id=1P3KiJGdanBbTpSFeLtbQCXIyoYrW8LtN) provides our *face verification* CNN20 pretrained weights (named `face_weight.pth`), and the following command finetunes the model to other 3 tasks. To evaluate the *face verification* task, we also need `lfw_pairs.txt` which can be downloaded [here](https://drive.google.com/open?id=1wuKxHrDXebWicDxqt6FpBMhMbdN6wEDf). Download `face_weight.pth` and `lfw_pairs.txt` use the links and place them in `face_data/`.
+**Step 2.** Similarly, we need accuracy goals of the 4 tasks for CPG. We train CNN20 on VGGFace2 for the *face verification* task and finetune it to *emotion*, *gender* and *age* tasks. This [link](https://drive.google.com/open?id=1P3KiJGdanBbTpSFeLtbQCXIyoYrW8LtN) provides our *face verification* CNN20 pretrained weights (named `face_weight.pth`), and the following command finetunes the model to other 3 tasks. To evaluate the *face verification* task, we also need `lfw_pairs.txt` which can be downloaded [here](https://drive.google.com/open?id=1wuKxHrDXebWicDxqt6FpBMhMbdN6wEDf). Download `face_weight.pth` and `lfw_pairs.txt` use the links and place them in `face_data/`.
 
 ```
 $ bash experiment3/baseline_face.sh 
@@ -140,7 +140,7 @@ The finetuning results are used as accuracy goals and stored in `logs/baseline_f
 {"face_verification": "0.9942", "gender": "0.9080", "emotion": "0.6254", "chalearn_gender": "0.9128", "age0": "0.6531", "age1": "0.5381", "age2": "0.5847", "age3": "0.5151", "age4": "0.5727"}
 ```
 
-** Step 3. ** Similar to Experiment2, we add tasks sequentially by iteratively runing the following command and copy the pruned models with appropriate pruning ratios. 
+**Step 3.** Similar to Experiment2, we add tasks sequentially by iteratively runing the following command and copy the pruned models with appropriate pruning ratios. 
 
 ```
 $ bash experiment3/FvGeEm_CPG_face.sh 
@@ -148,10 +148,10 @@ $ bash experiment3/FvGeEm_CPG_face.sh
 
 Note that this script is only for learning the first 3 tasks, *face verification*, *gender* and *emotion*, by modifiying the `TARGET_TASK_ID` variable in it. Because we have 5 folds for the *age* task, use `experiment3/FvGeEmAg0_CPG_face.sh` for *age0*, `experiment3/FvGeEmAg1_CPG_face.sh` for *age1*, and so on. 
 
-We repeat ** Step 3. ** until all 4 tasks, including 5 folds of the age task, are sequentially learned. 
+We repeat **Step 3.** until all 4 tasks, including 5 folds of the age task, are sequentially learned. 
 
 
-** Step 4. ** Inference the learned 4 tasks. 
+**Step 4.** Inference the learned 4 tasks. 
 
 ```
 $ bash experiment3/inference_FvGeEmAg.sh ${GPU_ID} ${TARGET_SPARSITY} ${AGEFOLD} ${LOG_PATH}
