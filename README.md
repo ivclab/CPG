@@ -50,7 +50,7 @@ $ bash experiment1/inference_CPG_cifar100.sh
 ```
 
 
-### CPG-VGG16 [Checkpoints](https://drive.google.com/file/d/1pcbazW4onWWSxWjZCG6fngB3ixX2Mv9a/view?usp=sharing) on CIFAR-100 Twenty Tasks.
+### CPG-VGG16 [Checkpoints](https://drive.google.com/file/d/1Zc4MJGPMcWSUkxw2j2Zy7s18jDUALkwc/view?usp=sharing) on CIFAR-100 Twenty Tasks.
 
 Extract the downloaded .zip file and place `all_max_mul_1.5/` in `checkpoints/CPG/experiment1/`. Modify the `SETTING` variable in `experiment1/inference_CPG_cifar100.sh` to `all_max_mul_1.5` before inference. 
 
@@ -112,7 +112,7 @@ $ bash experiment2/inference_CPG_imagenet.sh
 ```
 
 
-### CPG-ResNet50 [Checkpoints](https://drive.google.com/file/d/1wTy-QrtD7wzAs55WnQBFoUzY4ruYocGY/view?usp=sharing) on Fine-grained Dataset.
+### CPG-ResNet50 [Checkpoints](https://drive.google.com/file/d/1oYTQkNPo8JJ7lqKUKrAcu0T3ZAwe7C6r/view?usp=sharing) on Fine-grained Dataset.
 
 Extract the downloaded .zip file and place `resnet50/` in `checkpoints/CPG/experiment2/`. 
 
