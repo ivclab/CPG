@@ -40,7 +40,7 @@ If you would like to use higher accuracy goals, execute `experiment1/finetune_ci
 $ bash experiment1/CPG_cifar100_scratch_mul_1.5.sh
 ```
 
-If you use another accuracy goals, please modify the `baseline_cifar100_acc` variable in `experiment1/CPG_cifar100_scratch_1.5.sh` to the path containing your accuracy goals. 
+If you use another accuracy goals, please modify the `baseline_cifar100_acc` variable in `experiment1/CPG_cifar100_scratch_mul_1.5.sh` to the path containing your accuracy goals. 
 
 
 **Step 4.** Inference the learned 20 tasks. 
