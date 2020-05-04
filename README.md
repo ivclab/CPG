@@ -212,3 +212,6 @@ $ bash experiment3/inference_checkpoints_FvGeEmAg.sh
 | Train from Scratch | 99.417+-0.367 |  83.70  |    57.64   | 46.14 | 
 |      Finetune      |       -       |  90.80  |    62.54   | 57.27 | 
 |      **CPG**       | 99.300+-0.348 |  89.66  |    63.57   | 57.66 | 
+
+## Contact
+Please feel free to leave suggestions or comments to [Steven C. Y. Hung](https://github.com/fevemania)(brent12052003@gmail.com), Cheng-Hao Tu(andytu455176@gmail.com), Cheng-En Wu(chengen@iis.sinica.edu.tw), [Chein-Hung Chen](https://github.com/Chien-Hung)(redsword26@gmail.com), [Yi-Ming Chan](https://github.com/yimingchan)(yiming@iis.sinica.edu.tw), Chu-Song Chen(song@iis.sinica.edu.tw)
