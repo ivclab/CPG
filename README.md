@@ -195,6 +195,7 @@ $ bash experiment3/inference_checkpoints_FvGeEmAg.sh
 |   **CPG**   | 65.2 | 76.6 | 79.8 | 81.4 | 86.6 | 84.8 | 83.4 | 85.0 | 84.2 | 89.2 | 90.8 | 82.4 | 85.6 | 85.2 | 53.2 | 84.4 | 70.0 | 73.4 | 88.8 | 94.8 | 80.9 |
 
 *PAE is our previous work.
+
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/compacting-picking-and-growing-for/continual-learning-on-cifar100-20-tasks)](https://paperswithcode.com/sota/continual-learning-on-cifar100-20-tasks?p=compacting-picking-and-growing-for)
 
 ### Fine-grained 6 Tasks (datsets as experiment2 above) - ResNet50
