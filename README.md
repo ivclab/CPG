@@ -208,6 +208,13 @@ $ bash experiment3/inference_checkpoints_FvGeEmAg.sh
 |      [Piggyback](https://github.com/arunmallya/piggyback)     |   76.16  | 84.59 |     89.62     |  94.77  |  71.33  |  79.91 |       121       |
 |         **CPG**        |   75.81  | 83.59 |     92.80     |  96.62  |  77.15  |  80.33 |       121       |
 
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/compacting-picking-and-growing-for/continual-learning-on-imagenet-fine-grained-6)](https://paperswithcode.com/sota/continual-learning-on-imagenet-fine-grained-6?p=compacting-picking-and-growing-for)
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/compacting-picking-and-growing-for/continual-learning-on-cubs-fine-grained-6)](https://paperswithcode.com/sota/continual-learning-on-cubs-fine-grained-6?p=compacting-picking-and-growing-for)
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/compacting-picking-and-growing-for/continual-learning-on-stanford-cars-fine)](https://paperswithcode.com/sota/continual-learning-on-stanford-cars-fine?p=compacting-picking-and-growing-for)
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/compacting-picking-and-growing-for/continual-learning-on-flowers-fine-grained-6)](https://paperswithcode.com/sota/continual-learning-on-flowers-fine-grained-6?p=compacting-picking-and-growing-for)
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/compacting-picking-and-growing-for/continual-learning-on-wikiart-fine-grained-6)](https://paperswithcode.com/sota/continual-learning-on-wikiart-fine-grained-6?p=compacting-picking-and-growing-for)
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/compacting-picking-and-growing-for/continual-learning-on-sketch-fine-grained-6)](https://paperswithcode.com/sota/continual-learning-on-sketch-fine-grained-6?p=compacting-picking-and-growing-for)
+
 ### Facial-informatic 4 Tasks (datasets as experiment3 above) - CNN20 
 
 |       Methods      |      Face     |  Gender | Expression |  Age  |
