@@ -2,7 +2,20 @@
 
 This is an official Pytorch implementation of CPG - a lifelong learning algorithm for object classification. For details about CPG please refer to the paper [Compacting, Picking and Growing for Unforgetting Continual Learning](http://papers.nips.cc/paper/9518-compacting-picking-and-growing-for-unforgetting-continual-learning.pdf) ([Slides](https://github.com/ivclab/CPG/blob/master/docs/%5BSlides_PDF%5D19NeurIPS_unforgetting_continual_Learning.pdf),[Poster](https://github.com/ivclab/CPG/blob/master/docs/%5BPoster%5D19NeurIPS_unforgetting_continual_learning.pdf))
 
-The code is released for academic research use only. For commercial use, please contact [Dr. Chu-Song Chen](https://www.iis.sinica.edu.tw/pages/song/)(song@iis.sinica.edu.tw).
+The code is released for academic research use only. For commercial use, please contact Prof. Chu-Song Chen(chusong@csie.ntu.edu.tw).
+
+## Benchmarks
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/compacting-picking-and-growing-for/continual-learning-on-cifar100-20-tasks)](https://paperswithcode.com/sota/continual-learning-on-cifar100-20-tasks?p=compacting-picking-and-growing-for)
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/compacting-picking-and-growing-for/continual-learning-on-imagenet-fine-grained-6)](https://paperswithcode.com/sota/continual-learning-on-imagenet-fine-grained-6?p=compacting-picking-and-growing-for)
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/compacting-picking-and-growing-for/continual-learning-on-cubs-fine-grained-6)](https://paperswithcode.com/sota/continual-learning-on-cubs-fine-grained-6?p=compacting-picking-and-growing-for)
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/compacting-picking-and-growing-for/continual-learning-on-stanford-cars-fine)](https://paperswithcode.com/sota/continual-learning-on-stanford-cars-fine?p=compacting-picking-and-growing-for)
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/compacting-picking-and-growing-for/continual-learning-on-flowers-fine-grained-6)](https://paperswithcode.com/sota/continual-learning-on-flowers-fine-grained-6?p=compacting-picking-and-growing-for)
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/compacting-picking-and-growing-for/continual-learning-on-wikiart-fine-grained-6)](https://paperswithcode.com/sota/continual-learning-on-wikiart-fine-grained-6?p=compacting-picking-and-growing-for)
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/compacting-picking-and-growing-for/continual-learning-on-sketch-fine-grained-6)](https://paperswithcode.com/sota/continual-learning-on-sketch-fine-grained-6?p=compacting-picking-and-growing-for)
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/compacting-picking-and-growing-for/age-and-gender-classification-on-adience-age)](https://paperswithcode.com/sota/age-and-gender-classification-on-adience-age?p=compacting-picking-and-growing-for)
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/compacting-picking-and-growing-for/age-and-gender-classification-on-adience)](https://paperswithcode.com/sota/age-and-gender-classification-on-adience?p=compacting-picking-and-growing-for)
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/compacting-picking-and-growing-for/facial-expression-recognition-on-affectnet)](https://paperswithcode.com/sota/facial-expression-recognition-on-affectnet?p=compacting-picking-and-growing-for)
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/compacting-picking-and-growing-for/face-verification-on-labeled-faces-in-the)](https://paperswithcode.com/sota/face-verification-on-labeled-faces-in-the?p=compacting-picking-and-growing-for)
 
 ## Citing Paper
 Please cite following paper if these codes help your research:
@@ -196,8 +209,6 @@ $ bash experiment3/inference_checkpoints_FvGeEmAg.sh
 
 *PAE is our previous work.
 
-[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/compacting-picking-and-growing-for/continual-learning-on-cifar100-20-tasks)](https://paperswithcode.com/sota/continual-learning-on-cifar100-20-tasks?p=compacting-picking-and-growing-for)
-
 ### Fine-grained 6 Tasks (datsets as experiment2 above) - ResNet50
 
 |       Methods      | ImageNet |  CUBS | Stanford Cars | Flowers | Wikiart | Sketch | Model Size (MB) |
@@ -209,13 +220,6 @@ $ bash experiment3/inference_checkpoints_FvGeEmAg.sh
 |      [Piggyback](https://github.com/arunmallya/piggyback)     |   76.16  | 84.59 |     89.62     |  94.77  |  71.33  |  79.91 |       121       |
 |         **CPG**        |   75.81  | 83.59 |     92.80     |  96.62  |  77.15  |  80.33 |       121       |
 
-[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/compacting-picking-and-growing-for/continual-learning-on-imagenet-fine-grained-6)](https://paperswithcode.com/sota/continual-learning-on-imagenet-fine-grained-6?p=compacting-picking-and-growing-for)
-[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/compacting-picking-and-growing-for/continual-learning-on-cubs-fine-grained-6)](https://paperswithcode.com/sota/continual-learning-on-cubs-fine-grained-6?p=compacting-picking-and-growing-for)
-[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/compacting-picking-and-growing-for/continual-learning-on-stanford-cars-fine)](https://paperswithcode.com/sota/continual-learning-on-stanford-cars-fine?p=compacting-picking-and-growing-for)
-[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/compacting-picking-and-growing-for/continual-learning-on-flowers-fine-grained-6)](https://paperswithcode.com/sota/continual-learning-on-flowers-fine-grained-6?p=compacting-picking-and-growing-for)
-[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/compacting-picking-and-growing-for/continual-learning-on-wikiart-fine-grained-6)](https://paperswithcode.com/sota/continual-learning-on-wikiart-fine-grained-6?p=compacting-picking-and-growing-for)
-[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/compacting-picking-and-growing-for/continual-learning-on-sketch-fine-grained-6)](https://paperswithcode.com/sota/continual-learning-on-sketch-fine-grained-6?p=compacting-picking-and-growing-for)
-
 ### Facial-informatic 4 Tasks (datasets as experiment3 above) - CNN20 
 
 |       Methods      |      Face     |  Gender | Expression |  Age  |
@@ -224,10 +228,5 @@ $ bash experiment3/inference_checkpoints_FvGeEmAg.sh
 |      Finetune      |       -       |  90.80  |    62.54   | 57.27 | 
 |      **CPG**       | 99.300+-0.348 |  89.66  |    63.57   | 57.66 | 
 
-[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/compacting-picking-and-growing-for/age-and-gender-classification-on-adience-age)](https://paperswithcode.com/sota/age-and-gender-classification-on-adience-age?p=compacting-picking-and-growing-for)
-[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/compacting-picking-and-growing-for/age-and-gender-classification-on-adience)](https://paperswithcode.com/sota/age-and-gender-classification-on-adience?p=compacting-picking-and-growing-for)
-[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/compacting-picking-and-growing-for/facial-expression-recognition-on-affectnet)](https://paperswithcode.com/sota/facial-expression-recognition-on-affectnet?p=compacting-picking-and-growing-for)
-[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/compacting-picking-and-growing-for/face-verification-on-labeled-faces-in-the)](https://paperswithcode.com/sota/face-verification-on-labeled-faces-in-the?p=compacting-picking-and-growing-for)
-
 ## Contact
-Please feel free to leave suggestions or comments to [Steven C. Y. Hung](https://github.com/fevemania)(brent12052003@gmail.com), Cheng-Hao Tu(andytu455176@gmail.com), Cheng-En Wu(chengen@iis.sinica.edu.tw), [Chein-Hung Chen](https://github.com/Chien-Hung)(redsword26@gmail.com), [Yi-Ming Chan](https://github.com/yimingchan)(yiming@iis.sinica.edu.tw), [Chu-Song Chen](https://www.iis.sinica.edu.tw/pages/song/)(song@iis.sinica.edu.tw)
+Please feel free to leave suggestions or comments to [Steven C. Y. Hung](https://github.com/fevemania)(brent12052003@gmail.com), Cheng-Hao Tu(andytu455176@gmail.com), Cheng-En Wu(chengen@iis.sinica.edu.tw), [Chein-Hung Chen](https://github.com/Chien-Hung)(redsword26@gmail.com), [Yi-Ming Chan](https://github.com/yimingchan)(yiming@iis.sinica.edu.tw), Chu-Song Chen(chusong@csie.ntu.edu.tw)
